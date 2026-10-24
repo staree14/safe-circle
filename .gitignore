@@ -16,6 +16,12 @@ safecircle-backend/uploads/*
 .env
 */.env
 
+# Node & frontend
+node_modules/
+*/node_modules/
+dist/
+*/dist/
+
 # System
 .DS_Store
 */.DS_Store

@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+@theme {
+  --color-app-bg: #0B1020;
+  --color-sidebar-bg: #0E1426;
+  --color-panel-bg: #111A2E;
+  --color-card-bg: #151F35;
+  --color-surface: #1B2740;
+  --color-border-main: #29364F;
+  --color-border-subtle: #1E293F;
+
+  --color-text-primary: #F3F6FC;
+  --color-text-secondary: #A0AEC4;
+  --color-text-muted: #71809A;
+
+  --color-emergency: #F0525F;
+  --color-emergency-bg: #351C2A;
+  --color-emergency-border: #5A2333;
+  --color-acknowledged: #E8B65C;
+  --color-acknowledged-bg: #382B1B;
+  --color-resolved: #38C6A3;
+  --color-resolved-bg: #13332B;
+  --color-info: #6EA8FE;
+  --color-info-bg: #192742;
+  --color-secondary-violet: #A99AFB;
+
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #0B1020;
+  color: #F3F6FC;
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* Custom scrollbar for command center */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0E1426;
+}
+::-webkit-scrollbar-thumb {
+  background: #29364F;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3B4D6E;
+}
+
+/* Tabular numerals for timestamps & statistics */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pulsing radar effect */
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(240, 82, 95, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(240, 82, 95, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(240, 82, 95, 0);
+  }
+}
+
+.animate-radar {
+  animation: radar-pulse 2s infinite ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-radar, .animate-spin, .animate-pulse {
+    animation: none !important;
+  }
+}
+
+/* Custom Leaflet Map styling for command center dark mode */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #0E1426 !important;
+  font-family: inherit;
+}
+
+.dark-map-tiles {
+  filter: brightness(0.75) invert(1) contrast(3) hue-rotate(200deg) saturate(0.35);
+}
+
+.leaflet-popup-content-wrapper {
+  background: #151F35 !important;
+  color: #F3F6FC !important;
+  border: 1px solid #29364F !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+}
+
+.leaflet-popup-tip {
+  background: #151F35 !important;
+}
+
+/* Print styling for court forensic reports */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
