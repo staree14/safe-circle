@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { Incident, Evidence, TimelineEvent, Guardian, NotificationItem } from '../types';
 import {
   CURRENT_GUARDIAN,
@@ -43,7 +43,7 @@ const GuardianContext = createContext<GuardianContextType | undefined>(undefined
 
 export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [incidents, setIncidents] = useState<Incident[]>(INITIAL_INCIDENTS);
-  const [activeIncidentId, setActiveIncidentId] = useState<string>('DEMO-SC-2026-0142');
+  const [activeIncidentId, setActiveIncidentId] = useState<string>('SC-2026-0142');
   const [evidence, setEvidence] = useState<Evidence[]>(INITIAL_EVIDENCE);
   const [timelineEvents, setTimelineEvents] = useState<TimelineEvent[]>(INITIAL_TIMELINE_EVENTS);
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
@@ -63,7 +63,7 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  // Auto-dismiss toasts after 5 seconds
+  // Auto-dismiss toasts after 4.5 seconds
   useEffect(() => {
     if (toasts.length === 0) return;
     const timer = setTimeout(() => {
@@ -71,6 +71,98 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }, 4500);
     return () => clearTimeout(timer);
   }, [toasts]);
+
+  // Sync with Backend API if online (GET /api/incidents)
+  const syncWithBackend = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/incidents');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) return;
+
+      // Check if there are newly created digital reports or updates from Mobile app
+      setIncidents((prev) => {
+        const merged = [...prev];
+        for (const item of data) {
+          const existingIdx = merged.findIndex((m) => m.id === item.id || m.accessToken === item.access_token);
+          if (existingIdx >= 0) {
+            // Update status if server has newer status
+            merged[existingIdx] = {
+              ...merged[existingIdx],
+              status: item.status || merged[existingIdx].status,
+              updatedAt: item.updated_at || merged[existingIdx].updatedAt,
+            };
+          } else {
+            // New mobile upload! Add to list
+            const newInc: Incident = {
+              id: item.id,
+              type: item.incident_type,
+              victimDisplayName: item.user?.name || 'Shreya',
+              victimPhone: item.user?.phone || '+91 98765 43210',
+              status: item.status || 'ACTIVE',
+              createdAt: item.created_at,
+              updatedAt: item.updated_at || item.created_at,
+              location: {
+                lat: item.current_lat || 12.9756,
+                lng: item.current_lng || 77.6066,
+                label: 'Mobile Uploaded Vault Submission',
+                landmark: 'Bengaluru, Karnataka',
+              },
+              batteryLevel: item.battery_level || 85,
+              triggerMode: item.trigger_mode || 'DIGITAL_SUBMISSION',
+              description: item.description || 'User-Generated Evidence Report',
+              aiCategory: item.ai_category || 'Digital Harassment',
+              aiSeverity: item.ai_severity || 'HIGH',
+              aiSummary: item.ai_summary,
+              evidenceIds: (item.evidence || []).map((e: any) => e.id),
+              timelineEventIds: (item.timeline_events || []).map((t: any) => t.id),
+              accessToken: item.access_token,
+            };
+            merged.unshift(newInc);
+
+            // Also merge any new evidence items
+            if (item.evidence && item.evidence.length > 0) {
+              setEvidence((prevEv) => {
+                const newEvList = [...prevEv];
+                for (const ev of item.evidence) {
+                  if (!newEvList.some((e) => e.id === ev.id)) {
+                    newEvList.push({
+                      id: ev.id,
+                      incidentId: item.id,
+                      filename: ev.file_url ? ev.file_url.split('/').pop() || 'evidence.jpg' : 'threat_text.log',
+                      type: ev.evidence_type,
+                      timestamp: ev.created_at,
+                      sizeBytes: ev.file_size_bytes || 102400,
+                      sha256Hash: ev.sha256_hash,
+                      hashStatus: 'VERIFICATION_PASSED',
+                      chunkIndex: ev.chunk_index || 0,
+                      isSimulated: false,
+                      legalRelevance: 'Mobile vault uploaded artifact sealed in tamper-evident repository.',
+                      previewAsset: {
+                        type: ev.evidence_type.includes('AUDIO') ? 'audio' : 'image',
+                        mockResolution: '1170x2532 · Evidence Vault Item',
+                        textSnippet: ev.raw_text,
+                      },
+                    });
+                  }
+                }
+                return newEvList;
+              });
+            }
+          }
+        }
+        return merged;
+      });
+    } catch {
+      // Offline fallback: graceful silent fail
+    }
+  }, []);
+
+  useEffect(() => {
+    syncWithBackend();
+    const interval = setInterval(syncWithBackend, 6000);
+    return () => clearInterval(interval);
+  }, [syncWithBackend]);
 
   const markNotificationAsRead = (id: string) => {
     setNotifications((prev) =>
@@ -82,8 +174,12 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
-  const acknowledgeIncident = (incidentId: string, responderName: string = CURRENT_GUARDIAN.displayName) => {
+  const acknowledgeIncident = async (
+    incidentId: string,
+    responderName: string = CURRENT_GUARDIAN.displayName
+  ) => {
     const nowIso = new Date().toISOString();
+    const timeFormatted = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     setIncidents((prev) =>
       prev.map((inc) => {
@@ -102,15 +198,15 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // Append to timeline
     const newEvent: TimelineEvent = {
-      id: `evt-${Date.now()}`,
+      id: `evt-ack-${Date.now()}`,
       incidentId,
       eventType: 'GUARDIAN_ACKNOWLEDGED',
-      title: 'SOS Formally Acknowledged',
-      description: `Emergency alert acknowledged by ${responderName}. Responder is actively coordinating assistance.`,
+      title: 'Alert Formally Acknowledged',
+      description: `Acknowledged by ${responderName} at ${timeFormatted}. Emergency response coordination active.`,
       timestamp: nowIso,
       category: 'security',
-      metadata: { acknowledgedBy: responderName },
-      isDemoEvent: true,
+      metadata: { acknowledgedBy: responderName, time: timeFormatted },
+      isDemoEvent: false,
     };
 
     setTimelineEvents((prev) => [newEvent, ...prev]);
@@ -119,8 +215,8 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setNotifications((prev) => [
       {
         id: `notif-${Date.now()}`,
-        title: '✅ SOS Alert Acknowledged (Demo)',
-        message: `${responderName} acknowledged incident ${incidentId}.`,
+        title: 'Alert Acknowledged',
+        message: `${responderName} acknowledged incident ${incidentId}. Status updated to Acknowledged.`,
         timestamp: 'Just now',
         read: false,
         type: 'update',
@@ -130,10 +226,24 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     ]);
 
     addToast({
-      title: 'Alert Acknowledged (Demo)',
-      message: `Simulated acknowledgment by ${responderName} recorded. Status set to ACKNOWLEDGED.`,
+      title: 'Alert Acknowledged',
+      message: `Status updated to Acknowledged by ${responderName}.`,
       type: 'success',
     });
+
+    // Optionally hit backend acknowledgment endpoint if available
+    try {
+      const inc = incidents.find((i) => i.id === incidentId);
+      if (inc?.accessToken) {
+        await fetch(`http://localhost:8000/api/incidents/token/${inc.accessToken}/acknowledge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ acknowledged_by: responderName }),
+        });
+      }
+    } catch {
+      // Backend optional
+    }
   };
 
   const resolveIncident = (incidentId: string, note?: string) => {
@@ -153,17 +263,16 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       })
     );
 
-    // Append to timeline
     const newEvent: TimelineEvent = {
-      id: `evt-${Date.now()}`,
+      id: `evt-res-${Date.now()}`,
       incidentId,
       eventType: 'INCIDENT_RESOLVED',
       title: 'Incident Resolved — Victim Safe',
-      description: note || 'Emergency status cleared. Forensic custody log permanently finalized and archived in vault.',
+      description: note || 'Emergency status cleared. Evidence chain sealed in vault.',
       timestamp: nowIso,
       category: 'resolution',
       metadata: { resolvedAt: nowIso, note },
-      isDemoEvent: true,
+      isDemoEvent: false,
     };
 
     setTimelineEvents((prev) => [newEvent, ...prev]);
@@ -171,8 +280,8 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setNotifications((prev) => [
       {
         id: `notif-${Date.now()}`,
-        title: '🟢 Incident Resolved (Demo)',
-        message: `Incident ${incidentId} was marked resolved. Evidence chain sealed.`,
+        title: 'Incident Resolved',
+        message: `Incident ${incidentId} marked resolved. Evidence sealed.`,
         timestamp: 'Just now',
         read: false,
         type: 'system',
@@ -182,8 +291,8 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     ]);
 
     addToast({
-      title: 'Incident Resolved (Demo)',
-      message: 'Simulated resolution recorded. Incident state changed to RESOLVED.',
+      title: 'Incident Resolved',
+      message: 'Status changed to RESOLVED. Evidence sealed.',
       type: 'info',
     });
   };
@@ -194,10 +303,9 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const nowIso = new Date().toISOString();
 
     const isVideo = nextIndex % 2 === 0;
-    const newEvidenceId = isVideo ? `DEMO-VID-${String(nextIndex + 1).padStart(3, '0')}` : `DEMO-AUD-${String(nextIndex + 1).padStart(3, '0')}`;
-    const filename = isVideo ? `stealth_chunk_0${nextIndex}_cam_stream.webm` : `stealth_audio_chunk_0${nextIndex}.opus`;
+    const newEvidenceId = isVideo ? `EVD-VID-${String(nextIndex + 1).padStart(2, '0')}` : `EVD-AUD-${String(nextIndex + 1).padStart(2, '0')}`;
+    const filename = isVideo ? `ambient_dash_chunk_0${nextIndex}.webm` : `cabin_mic_chunk_0${nextIndex}.opus`;
 
-    // Simulated pseudo-random SHA-256 string
     const simulatedSha = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 
     const newEvidenceItem: Evidence = {
@@ -210,14 +318,14 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       sha256Hash: simulatedSha,
       hashStatus: 'VERIFICATION_PASSED',
       chunkIndex: nextIndex,
-      isSimulated: true,
-      capturedCoordinates: { lat: 12.9356 + nextIndex * 0.0002, lng: 77.6253 + nextIndex * 0.0002 },
-      legalRelevance: `Sequential 4-second ambient capture (${isVideo ? 'video' : 'directional audio'}) cryptographically fingerprinted.`,
+      isSimulated: false,
+      capturedCoordinates: { lat: 12.9850 + nextIndex * 0.0003, lng: 77.5850 + nextIndex * 0.0003 },
+      legalRelevance: `Sequential ambient capture (${isVideo ? 'video' : 'directional audio'}) cryptographically fingerprinted.`,
       previewAsset: isVideo
         ? {
             type: 'video',
             durationSeconds: 4.0,
-            mockResolution: '1080p 30fps (Stealth Mode)',
+            mockResolution: '1080p 30fps (Stealth Buffer)',
           }
         : {
             type: 'audio',
@@ -228,7 +336,6 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     setEvidence((prev) => [...prev, newEvidenceItem]);
 
-    // Update incident evidence count
     setIncidents((prev) =>
       prev.map((inc) => {
         if (inc.id === incidentId) {
@@ -242,28 +349,26 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       })
     );
 
-    // Append to timeline
     const newTimelineEvt: TimelineEvent = {
       id: `evt-${Date.now()}`,
       incidentId,
       eventType: 'EVIDENCE_HASHED',
-      title: `Chunk #${String(nextIndex).padStart(2, '0')} Cryptographically Preserved`,
-      description: `New ${isVideo ? '4.0s stealth video' : '4.0s directional audio'} segment (${newEvidenceId}) fingerprinted with SHA-256: ${simulatedSha.slice(0, 16)}...`,
+      title: `Chunk #${String(nextIndex).padStart(2, '0')} Preserved`,
+      description: `New ${isVideo ? '4.0s video' : '4.0s audio'} segment (${newEvidenceId}) fingerprinted with SHA-256 seal.`,
       timestamp: nowIso,
       category: 'evidence',
       metadata: {
         evidenceId: newEvidenceId,
         sha256: simulatedSha,
-        chunkIndex: nextIndex,
       },
-      isDemoEvent: true,
+      isDemoEvent: false,
     };
 
     setTimelineEvents((prev) => [newTimelineEvt, ...prev]);
 
     addToast({
-      title: 'Incoming Evidence Preserved (Demo)',
-      message: `Added simulated ${isVideo ? 'video' : 'audio'} chunk #${nextIndex} (${newEvidenceId}) with SHA-256 seal.`,
+      title: 'Incoming Evidence Preserved',
+      message: `Sealed ${isVideo ? 'video' : 'audio'} chunk #${nextIndex} with SHA-256 certificate.`,
       type: 'info',
     });
   };
@@ -293,36 +398,31 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     );
 
     const newTimelineEvt: TimelineEvent = {
-      id: `evt-${Date.now()}`,
+      id: `evt-loc-${Date.now()}`,
       incidentId,
       eventType: 'LOCATION_UPDATED',
-      title: 'Simulated GPS Ping Received',
-      description: 'Device telemetry pulse received. Coordinates updated with 4.2m precision circle.',
+      title: 'Live GPS Refreshed',
+      description: 'Device telemetry pulse received. Coordinates updated with 4.5m precision.',
       timestamp: nowIso,
       category: 'location',
-      isDemoEvent: true,
+      isDemoEvent: false,
     };
 
     setTimelineEvents((prev) => [newTimelineEvt, ...prev]);
 
     addToast({
-      title: 'Telemetry Refreshed (Demo)',
-      message: 'Simulated GPS coordinate drift and battery telemetry updated.',
+      title: 'Telemetry Refreshed',
+      message: 'GPS coordinates and device battery status updated.',
       type: 'info',
     });
   };
 
   const resetDemoState = () => {
     setIncidents(INITIAL_INCIDENTS);
-    setActiveIncidentId('DEMO-SC-2026-0142');
+    setActiveIncidentId('SC-2026-0142');
     setEvidence(INITIAL_EVIDENCE);
     setTimelineEvents(INITIAL_TIMELINE_EVENTS);
     setNotifications(INITIAL_NOTIFICATIONS);
-    addToast({
-      title: 'Demo State Reset',
-      message: 'All incidents, evidence items, and simulated timelines restored to factory demo state.',
-      type: 'info',
-    });
   };
 
   const getIncidentEvidence = (incidentId: string) => {

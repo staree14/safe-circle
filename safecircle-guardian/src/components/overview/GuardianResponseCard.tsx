@@ -17,8 +17,8 @@ export const GuardianResponseCard: React.FC<GuardianResponseCardProps> = ({ inci
     navigator.clipboard.writeText(capabilityUrl);
     setCopied(true);
     addToast({
-      title: 'Capability Link Copied',
-      message: 'Secure emergency access URL copied to clipboard.',
+      title: 'Stream Link Copied',
+      message: 'Secure emergency stream URL copied to clipboard.',
       type: 'info',
     });
     setTimeout(() => setCopied(false), 2500);
@@ -28,54 +28,54 @@ export const GuardianResponseCard: React.FC<GuardianResponseCardProps> = ({ inci
   const isRes = incident.status === 'RESOLVED';
 
   return (
-    <div className="bg-[#151F35] border border-[#29364F] rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+    <div className="bg-[#FFFFFF] border border-[#E8DFDA] rounded-2xl p-5 shadow-sm flex flex-col justify-between">
       <div>
         {/* Card Header */}
-        <div className="flex items-center justify-between border-b border-[#29364F] pb-3 mb-4">
+        <div className="flex items-center justify-between border-b border-[#E8DFDA] pb-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#1B2740] border border-[#29364F] text-[#E8B65C]">
+            <div className="p-2 rounded-xl bg-[#E8F5E9] border border-[#C8E6C9] text-[#2D6A4F]">
               <ShieldCheck className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#F3F6FC] leading-none">
-                Guardian Response Panel
+              <h3 className="font-serif text-sm font-bold text-[#1F1A1C] leading-none">
+                Guardian Dispatch Panel
               </h3>
-              <span className="text-[11px] text-[#71809A]">
-                Dispatch & Verification Status
+              <span className="text-[11px] text-[#6E6265]">
+                Verification & Trusted Circle
               </span>
             </div>
           </div>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-[#1B2740] text-[#A0AEC4] border border-[#29364F] uppercase font-mono">
-            Demo Responder
+          <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#E8F5E9] text-[#2D6A4F] border border-[#C8E6C9] uppercase font-bold">
+            Primary Guardian
           </span>
         </div>
 
         {/* Status Pipeline */}
-        <div className="space-y-3.5 text-xs">
+        <div className="space-y-3 text-xs">
           {/* Active Guardian On Duty */}
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A]">Primary Contact</span>
-            <span className="font-semibold text-[#F3F6FC] flex items-center gap-1.5">
-              <UserCheck className="w-3.5 h-3.5 text-[#38C6A3]" />
+            <span className="text-[#6E6265]">Primary Contact</span>
+            <span className="font-bold text-[#1F1A1C] flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5 text-[#2D6A4F]" />
               {guardian.displayName}
             </span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A]">Relationship Role</span>
-            <span className="text-[#A0AEC4] font-medium">{guardian.role}</span>
+            <span className="text-[#6E6265]">Relationship</span>
+            <span className="text-[#1F1A1C] font-medium">{guardian.role}</span>
           </div>
 
           {/* Acknowledgement State */}
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A]">Acknowledgment</span>
+            <span className="text-[#6E6265]">Acknowledgment</span>
             {isAck || isRes ? (
-              <span className="px-2 py-0.5 rounded bg-[#382B1B] text-[#E8B65C] font-semibold border border-[#E8B65C]/40 flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded bg-[#E8F5E9] text-[#2D6A4F] font-bold border border-[#C8E6C9] flex items-center gap-1">
                 <Check className="w-3 h-3" />
                 Acknowledged by {incident.acknowledgedBy || guardian.displayName}
               </span>
             ) : (
-              <span className="px-2 py-0.5 rounded bg-[#351C2A] text-[#F0525F] font-semibold border border-[#F0525F]/40 flex items-center gap-1 animate-pulse">
+              <span className="px-2 py-0.5 rounded bg-[#FDECEE] text-[#C84B53] font-bold border border-[#F7D0D4] flex items-center gap-1 animate-pulse">
                 <AlertCircle className="w-3 h-3" />
                 Pending Acknowledgment
               </span>
@@ -84,57 +84,52 @@ export const GuardianResponseCard: React.FC<GuardianResponseCardProps> = ({ inci
 
           {/* Resolution State */}
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A]">Resolution State</span>
+            <span className="text-[#6E6265]">Incident State</span>
             {isRes ? (
-              <span className="px-2 py-0.5 rounded bg-[#13332B] text-[#38C6A3] font-semibold border border-[#38C6A3]/40 flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded bg-[#E8F5E9] text-[#2D6A4F] font-bold border border-[#C8E6C9] flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" />
                 Finalized / Safe
               </span>
             ) : (
-              <span className="text-[#A0AEC4]">Active Monitoring</span>
+              <span className="text-[#C84B53] font-bold">Active Stream</span>
             )}
           </div>
 
           {/* Emergency Telegram Dispatch status */}
-          <div className="flex items-center justify-between pt-2 border-t border-[#29364F]/60">
-            <span className="text-[#71809A]">Telegram Dispatch</span>
-            <span className="text-[#38C6A3] font-mono flex items-center gap-1">
+          <div className="flex items-center justify-between pt-2 border-t border-[#E8DFDA]">
+            <span className="text-[#6E6265]">Circle Broadcast</span>
+            <span className="text-[#2D6A4F] font-bold flex items-center gap-1">
               <Check className="w-3 h-3" />
-              Broadcast Sent (Demo)
+              Telegram Dispatch Sent
             </span>
           </div>
         </div>
 
         {/* Capability Link Box */}
-        <div className="mt-4 p-3 rounded-xl bg-[#0E1426] border border-[#29364F] space-y-1.5">
+        <div className="mt-4 p-3 rounded-xl bg-[#FAF6F3] border border-[#E8DFDA] space-y-1.5">
           <div className="flex items-center justify-between text-[11px]">
-            <span className="text-[#A0AEC4] font-medium flex items-center gap-1">
-              <Share2 className="w-3 h-3 text-[#6EA8FE]" />
-              Capability Stream Link
+            <span className="text-[#1F1A1C] font-semibold flex items-center gap-1">
+              <Share2 className="w-3 h-3 text-[#C84B53]" />
+              Secure Capability Stream Link
             </span>
-            <span className="text-[10px] text-[#71809A]">No login required</span>
+            <span className="text-[10px] text-[#6E6265]">Direct Access</span>
           </div>
           <div className="flex items-center gap-2">
             <input
               type="text"
               readOnly
               value={capabilityUrl}
-              className="flex-1 bg-[#151F35] border border-[#29364F] rounded-lg px-2 py-1 text-[11px] font-mono text-[#A0AEC4] select-all focus:outline-none"
+              className="flex-1 bg-[#FFFFFF] border border-[#E8DFDA] rounded-lg px-2.5 py-1 text-[11px] font-mono text-[#6E6265] select-all focus:outline-none"
             />
             <button
               onClick={handleCopyLink}
-              className="p-1.5 rounded-lg bg-[#1B2740] hover:bg-[#253655] border border-[#29364F] text-[#F3F6FC] transition-colors"
+              className="p-1.5 rounded-lg bg-[#FFFFFF] hover:bg-[#F3ECE8] border border-[#E8DFDA] text-[#1F1A1C] transition-colors"
               title="Copy Capability URL"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-[#38C6A3]" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? <Check className="w-3.5 h-3.5 text-[#2D6A4F]" /> : <Copy className="w-3.5 h-3.5 text-[#6E6265]" />}
             </button>
           </div>
         </div>
-      </div>
-
-      <div className="mt-3 text-[11px] text-[#71809A] flex items-center justify-between">
-        <span>Channel:</span>
-        <span className="text-[#A0AEC4]">Telegram Bot API & Direct Web PWA</span>
       </div>
     </div>
   );

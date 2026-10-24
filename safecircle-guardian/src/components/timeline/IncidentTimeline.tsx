@@ -1,15 +1,14 @@
 import React from 'react';
 import {
   ShieldAlert,
-  Film,
   Hash,
   Send,
   MapPin,
   ShieldCheck,
   CheckCircle2,
   Clock,
-  Sparkles,
-  Bot
+  Bot,
+  FileCheck2
 } from 'lucide-react';
 import type { TimelineEvent } from '../../types';
 
@@ -21,118 +20,105 @@ export const IncidentTimeline: React.FC<IncidentTimelineProps> = ({ events }) =>
   const getEventIcon = (eventType: string) => {
     switch (eventType) {
       case 'SOS_TRIGGERED':
-        return <ShieldAlert className="w-4 h-4 text-[#F0525F]" />;
+        return <ShieldAlert className="w-3.5 h-3.5 text-[#C84B53]" />;
       case 'STEALTH_RECORDING_STARTED':
-        return <Film className="w-4 h-4 text-[#6EA8FE]" />;
       case 'EVIDENCE_HASHED':
-        return <Hash className="w-4 h-4 text-[#38C6A3]" />;
+        return <Hash className="w-3.5 h-3.5 text-[#2D6A4F]" />;
       case 'TELEGRAM_ALERT_SENT':
-        return <Send className="w-4 h-4 text-[#A99AFB]" />;
+        return <Send className="w-3.5 h-3.5 text-[#C84B53]" />;
       case 'LOCATION_UPDATED':
-        return <MapPin className="w-4 h-4 text-[#6EA8FE]" />;
+        return <MapPin className="w-3.5 h-3.5 text-[#C84B53]" />;
       case 'AI_TRIAGE_COMPLETED':
-        return <Bot className="w-4 h-4 text-[#E8B65C]" />;
+        return <Bot className="w-3.5 h-3.5 text-[#D97706]" />;
       case 'GUARDIAN_ACKNOWLEDGED':
-        return <ShieldCheck className="w-4 h-4 text-[#E8B65C]" />;
+        return <ShieldCheck className="w-3.5 h-3.5 text-[#2D6A4F]" />;
+      case 'REPORT_SHARED':
+        return <FileCheck2 className="w-3.5 h-3.5 text-[#2D6A4F]" />;
       case 'INCIDENT_RESOLVED':
-        return <CheckCircle2 className="w-4 h-4 text-[#38C6A3]" />;
+        return <CheckCircle2 className="w-3.5 h-3.5 text-[#2D6A4F]" />;
       default:
-        return <Clock className="w-4 h-4 text-[#A0AEC4]" />;
+        return <Clock className="w-3.5 h-3.5 text-[#6E6265]" />;
     }
   };
 
-  const getEventBorderClass = (eventType: string) => {
+  const getEventBadgeClass = (eventType: string) => {
     switch (eventType) {
       case 'SOS_TRIGGERED':
-        return 'border-[#F0525F]/50 bg-[#351C2A]';
+        return 'border-[#F7D0D4] bg-[#FDECEE]';
       case 'GUARDIAN_ACKNOWLEDGED':
-        return 'border-[#E8B65C]/50 bg-[#382B1B]';
+      case 'EVIDENCE_HASHED':
       case 'INCIDENT_RESOLVED':
-        return 'border-[#38C6A3]/50 bg-[#13332B]';
+      case 'REPORT_SHARED':
+        return 'border-[#C8E6C9] bg-[#E8F5E9]';
       default:
-        return 'border-[#29364F] bg-[#1B2740]';
+        return 'border-[#E8DFDA] bg-[#FAF6F3]';
     }
+  };
+
+  // Convert descriptions to crisp, 1-line scannable items
+  const formatShortDescription = (evt: TimelineEvent) => {
+    if (evt.eventType === 'SOS_TRIGGERED') return 'SOS triggered via Calculator (112=)';
+    if (evt.eventType === 'TELEGRAM_ALERT_SENT') return 'Telegram alert & live link sent to Aditi';
+    if (evt.eventType === 'EVIDENCE_HASHED') return evt.description.replace('cryptographically hashed with SHA-256 seal', 'sealed (SHA-256)');
+    if (evt.eventType === 'GUARDIAN_ACKNOWLEDGED') return evt.description;
+    if (evt.eventType === 'LOCATION_UPDATED') return 'Live GPS ping: Palace Road towards Malleswaram';
+    if (evt.eventType === 'AI_TRIAGE_COMPLETED') return 'Critical Threat: "I\'m coming for you tomorrow"';
+    if (evt.eventType === 'REPORT_SHARED') return 'Vault evidence shared with Aditi Sharma';
+    if (evt.eventType === 'INCIDENT_RESOLVED') return 'Incident resolved • Victim safely assisted';
+    return evt.description;
   };
 
   return (
-    <div className="bg-[#151F35] border border-[#29364F] rounded-2xl overflow-hidden shadow-xl flex flex-col">
+    <div className="bg-[#FFFFFF] border border-[#E8DFDA] rounded-2xl overflow-hidden shadow-xs flex flex-col">
       {/* Header Bar */}
-      <div className="px-5 py-3.5 border-b border-[#29364F] flex items-center justify-between bg-[#111A2E]">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-[#1B2740] text-[#E8B65C] border border-[#29364F]">
-            <Clock className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-[#F3F6FC] leading-none">
-              Incident Audit Trail & Timeline
-            </h3>
-            <p className="text-[11px] text-[#71809A] mt-0.5">
-              Chronological, tamper-evident forensic log of alerts and updates
-            </p>
-          </div>
+      <div className="px-4 py-3 border-b border-[#E8DFDA] flex items-center justify-between bg-[#FFFFFF]">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-[#C84B53]" />
+          <h3 className="font-serif text-sm font-bold text-[#1F1A1C] leading-none">
+            Incident Timeline
+          </h3>
         </div>
-        <span className="text-[10px] px-2 py-0.5 rounded bg-[#1B2740] text-[#A0AEC4] border border-[#29364F] font-mono">
-          {events.length} Events Logged
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF6F3] text-[#6E6265] border border-[#E8DFDA] font-mono font-bold">
+          {events.length} Events
         </span>
       </div>
 
-      {/* Timeline Stream */}
-      <div className="p-5 max-h-[460px] overflow-y-auto">
-        <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-[#29364F]">
+      {/* Scannable Compact Timeline Feed */}
+      <div className="p-3.5 max-h-[300px] overflow-y-auto">
+        <div className="relative pl-5 space-y-3 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#E8DFDA]">
           {events.map((evt, idx) => (
-            <div key={evt.id} className="relative group">
+            <div key={evt.id} className="relative flex items-start gap-2.5 group">
               {/* Event node dot */}
               <div
-                className={`absolute -left-6 top-1 w-6 h-6 rounded-full border flex items-center justify-center shadow-md transition-transform group-hover:scale-110 ${getEventBorderClass(
+                className={`absolute -left-5 top-0.5 w-5 h-5 rounded-full border flex items-center justify-center shrink-0 shadow-2xs ${getEventBadgeClass(
                   evt.eventType
                 )}`}
               >
                 {getEventIcon(evt.eventType)}
               </div>
 
-              {/* Event content card */}
-              <div className="bg-[#111A2E] border border-[#29364F] rounded-xl p-3.5 space-y-1.5 transition-all group-hover:border-[#3B4D6E]">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-[#F3F6FC]">
-                      {evt.title}
-                    </span>
-                    {idx === 0 && (
-                      <span className="px-1.5 py-0.2 rounded bg-[#351C2A] border border-[#F0525F]/30 text-[#F0525F] text-[9px] font-bold uppercase tracking-wider">
-                        Latest
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[10px] font-mono text-[#71809A] tabular-nums">
-                    {new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              {/* 1-Line Scannable Entry */}
+              <div className="flex-1 min-w-0 bg-[#FAF6F3] rounded-lg px-2.5 py-1.5 border border-[#E8DFDA] hover:border-[#C84B53]/30 transition-colors">
+                <div className="flex items-center justify-between gap-1.5">
+                  <span className="font-mono text-[10px] font-bold text-[#C84B53] shrink-0 tabular-nums">
+                    {new Date(evt.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
+                  <span className="text-[11px] font-bold text-[#1F1A1C] truncate flex-1">
+                    {evt.title}
+                  </span>
+                  {idx === 0 && (
+                    <span className="px-1.5 py-0.2 rounded bg-[#FDECEE] border border-[#F7D0D4] text-[#C84B53] text-[9px] font-bold uppercase tracking-wider shrink-0">
+                      Latest
+                    </span>
+                  )}
                 </div>
-
-                <p className="text-xs text-[#A0AEC4] leading-relaxed">
-                  {evt.description}
+                <p className="text-[11px] text-[#6E6265] truncate mt-0.5">
+                  {formatShortDescription(evt)}
                 </p>
-
-                {evt.metadata && Object.keys(evt.metadata).length > 0 && (
-                  <div className="pt-1.5 mt-1 border-t border-[#29364F]/50 flex flex-wrap gap-2 text-[10px] font-mono text-[#71809A]">
-                    {Object.entries(evt.metadata).map(([key, val]) => (
-                      <span key={key} className="bg-[#0E1426] px-1.5 py-0.5 rounded border border-[#29364F]">
-                        {key}: <strong className="text-[#A0AEC4]">{String(val).slice(0, 24)}</strong>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="px-5 py-2.5 border-t border-[#29364F] bg-[#111A2E] text-[11px] text-[#71809A] flex items-center justify-between">
-        <span className="flex items-center gap-1">
-          <Sparkles className="w-3 h-3 text-[#E8B65C]" />
-          Immutable hash verification active
-        </span>
-        <span className="font-mono text-[#6EA8FE]">Section 65B Audit Chain</span>
       </div>
     </div>
   );

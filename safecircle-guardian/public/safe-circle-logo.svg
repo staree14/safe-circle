@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Soft Glow -->
+    <radialGradient id="bgGlow" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#FFF5F6" />
+      <stop offset="100%" stop-color="#FAF0F2" />
+    </radialGradient>
+
+    <!-- Outer Shield Gradient: Rich Ruby Crimson to Deep Velvet Plum -->
+    <linearGradient id="shieldGrad" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#E24A68" />
+      <stop offset="45%" stop-color="#C52B50" />
+      <stop offset="100%" stop-color="#7B1A40" />
+    </linearGradient>
+
+    <!-- Inner Shield Gradient: Deep Burgundy Depth -->
+    <linearGradient id="innerShieldGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#931B43" />
+      <stop offset="100%" stop-color="#540D2A" />
+    </linearGradient>
+
+    <!-- Glowing Circle Gradient: Radiant Rose to Vibrant Coral-Pink -->
+    <linearGradient id="circleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF8DA7" />
+      <stop offset="50%" stop-color="#FA5278" />
+      <stop offset="100%" stop-color="#D92857" />
+    </linearGradient>
+
+    <!-- Drop Shadows for Crisp Depth -->
+    <filter id="shieldShadow" x="-15%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#7B1A40" flood-opacity="0.28" />
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.12" />
+    </filter>
+
+    <filter id="coreGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#FA5278" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- 1. Soft Rounded Background Canvas (Matches Warm Cream Theme) -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGlow)" />
+
+  <!-- 2. Main Outer Shield with Drop Shadow -->
+  <path d="M 256 64
+           C 336 64, 404 96, 404 154
+           C 404 286, 328 388, 256 432
+           C 184 388, 108 286, 108 154
+           C 108 96, 176 64, 256 64 Z" fill="url(#shieldGrad)" filter="url(#shieldShadow)" />
+
+  <!-- 3. Inner Shield Core (Creates Defined Inset Bevel) -->
+  <path d="M 256 86
+           C 322 86, 380 112, 380 162
+           C 380 274, 314 362, 256 404
+           C 198 362, 132 274, 132 162
+           C 132 112, 190 86, 256 86 Z" fill="url(#innerShieldGrad)" opacity="0.95" />
+
+  <!-- 4. Subtle Top Shield Lustre / Specular Highlight -->
+  <path d="M 256 88
+           C 318 88, 372 112, 376 158
+           C 350 136, 305 124, 256 124
+           C 207 124, 162 136, 136 158
+           C 140 112, 194 88, 256 88 Z" fill="#FFFFFF" opacity="0.22" />
+
+  <!-- 5. The "SafeCircle" Outer Protective Ring -->
+  <circle cx="256" cy="228" r="92" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-opacity="0.3" />
+
+  <!-- 6. Glowing Radiant Sanctuary Disc -->
+  <circle cx="256" cy="228" r="76" fill="url(#circleGrad)" filter="url(#coreGlow)" />
+
+  <!-- 7. Center Minimalist Checkmark / Sentinel Emblem -->
+  <path d="M 224 228 
+           L 246 250 
+           L 294 202" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

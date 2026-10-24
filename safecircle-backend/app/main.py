@@ -17,60 +17,204 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(level
 
 def seed_demo_data():
     """
-    Auto-seeds the demo user ('Sreeya') and 3 trusted contacts on first boot.
-    Ensures both Mobile PWA (Person 1) and Guardian Dashboard (Person 3)
-    can operate immediately with zero configuration friction.
+    Auto-seeds the demo user ('Shreya'), trusted contacts, and the exact
+    synced incidents SC-2026-0142 (Physical SOS) and SC-2026-0138 (Digital Report).
     """
     db = SessionLocal()
     try:
-        user_count = db.query(models.User).count()
-        if user_count == 0:
-            logger.info("Database is empty. Seeding demo user 'Sreeya' and 3 trusted contacts...")
-
-            # 1. Primary demo user: Sreeya
-            sreeya = models.User(
+        shreya = db.query(models.User).filter(models.User.phone == "+91 98765 43210").first()
+        if not shreya:
+            shreya = models.User(
                 id=str(uuid.uuid4()),
-                name="Sreeya",
+                name="Shreya",
                 phone="+91 98765 43210",
-                email="sreeya@safecircle.internal"
+                email="shreya@safecircle.internal"
             )
-            db.add(sreeya)
+            db.add(shreya)
             db.flush()
 
-            # 2. Trusted Contacts
+            # Trusted Contacts
             c1 = models.TrustedContact(
                 id=str(uuid.uuid4()),
-                user_id=sreeya.id,
+                user_id=shreya.id,
                 name="Aditi Sharma",
-                relationship_role="Sister",
+                relationship_role="Sister / Primary Contact",
                 phone="+91 98765 43211",
                 telegram_chat_id="123456789",
                 is_primary_sos=True
             )
             c2 = models.TrustedContact(
                 id=str(uuid.uuid4()),
-                user_id=sreeya.id,
-                name="Dr. Rajiv Chand",
-                relationship_role="Father",
+                user_id=shreya.id,
+                name="Pooja Sharma (PS)",
+                relationship_role="Circle Member",
                 phone="+91 98765 43212",
                 telegram_chat_id="987654321",
                 is_primary_sos=False
             )
             c3 = models.TrustedContact(
                 id=str(uuid.uuid4()),
-                user_id=sreeya.id,
-                name="Campus Security Desk",
-                relationship_role="Authority / Security",
-                phone="+91 98765 00100",
+                user_id=shreya.id,
+                name="Rohan Mehta (RM)",
+                relationship_role="Circle Member",
+                phone="+91 98765 43213",
                 telegram_chat_id="555555555",
                 is_primary_sos=False
             )
+            c4 = models.TrustedContact(
+                id=str(uuid.uuid4()),
+                user_id=shreya.id,
+                name="Kavita S (KS)",
+                relationship_role="Circle Member",
+                phone="+91 98765 43214",
+                telegram_chat_id="444444444",
+                is_primary_sos=False
+            )
+            db.add_all([c1, c2, c3, c4])
+            db.flush()
 
-            db.add_all([c1, c2, c3])
-            db.commit()
-            logger.info(f"Successfully seeded demo user '{sreeya.name}' (ID: {sreeya.id}) and 3 trusted contacts.")
-        else:
-            logger.info(f"Existing database detected with {user_count} user(s). Skipping seed.")
+        # Seed Incident 1: SC-2026-0142 (Physical SOS)
+        inc1 = db.query(models.Incident).filter(models.Incident.id == "SC-2026-0142").first()
+        if not inc1:
+            inc1 = models.Incident(
+                id="SC-2026-0142",
+                user_id=shreya.id,
+                incident_type=models.IncidentType.PHYSICAL_SOS.value,
+                status=models.IncidentStatus.ACTIVE.value,
+                access_token="sc_live_tok_0142_physical",
+                initial_lat=12.9756,
+                initial_lng=77.6066,
+                current_lat=12.9850,
+                current_lng=77.5850,
+                battery_level=76,
+                trigger_mode="Calculator Camouflage 112=",
+                description="Physical Emergency SOS triggered via Calculator Camouflage 112= along MG Road to Malleswaram transit route."
+            )
+            db.add(inc1)
+            db.flush()
+
+            # Evidence for SC-2026-0142
+            ev1 = models.Evidence(
+                id=str(uuid.uuid4()),
+                incident_id=inc1.id,
+                evidence_type=models.EvidenceType.STEALTH_AUDIO_CHUNK.value,
+                file_url="ambient_cab_audio_01.webm",
+                raw_text=None,
+                sha256_hash="8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4",
+                file_size_bytes=196608,
+                chunk_index=0,
+                captured_lat=12.9850,
+                captured_lng=77.5850
+            )
+            db.add(ev1)
+
+            # Timeline events for SC-2026-0142
+            t1 = models.TimelineEvent(
+                id=str(uuid.uuid4()),
+                incident_id=inc1.id,
+                event_type=models.TimelineEventType.SOS_TRIGGERED.value,
+                title="Physical Emergency SOS Activated",
+                description="Triggered via Calculator Camouflage (PIN: 112=) from MG Road, Bengaluru.",
+                metadata_json={"trigger_mode": "Calculator Camouflage 112=", "battery": 76, "time_ist": "5:09 PM IST"}
+            )
+            t2 = models.TimelineEvent(
+                id=str(uuid.uuid4()),
+                incident_id=inc1.id,
+                event_type=models.TimelineEventType.TELEGRAM_ALERT_SENT.value,
+                title="Telegram Dispatch Sent",
+                description="Emergency alert and live Guardian stream link dispatched to Aditi Sharma and Circle (PS, RM, KS).",
+                metadata_json={"recipient": "Aditi Sharma (+91 98765 43211)", "circle": ["PS", "RM", "KS"]}
+            )
+            t3 = models.TimelineEvent(
+                id=str(uuid.uuid4()),
+                incident_id=inc1.id,
+                event_type=models.TimelineEventType.EVIDENCE_HASHED.value,
+                title="Audio Evidence Sealed",
+                description="Captured ambient audio buffer (0:14) cryptographically hashed with SHA-256 seal (8f434346648f...).",
+                metadata_json={"filename": "ambient_cab_audio_01.webm", "duration": "0:14", "sha256": "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4"}
+            )
+            db.add_all([t1, t2, t3])
+
+        # Seed Incident 2: SC-2026-0138 (Digital Threat Report from Mobile Vault)
+        inc2 = db.query(models.Incident).filter(models.Incident.id == "SC-2026-0138").first()
+        if not inc2:
+            inc2 = models.Incident(
+                id="SC-2026-0138",
+                user_id=shreya.id,
+                incident_type=models.IncidentType.DIGITAL_THREAT.value,
+                status=models.IncidentStatus.ACKNOWLEDGED.value,
+                access_token="sc_vault_tok_0138_digital",
+                trigger_mode="DIGITAL_SUBMISSION",
+                description="User-Generated Digital Harassment Report — Preserved from Mobile Evidence Vault.",
+                ai_category="Cyberstalking, Impersonation & Imminent Physical Threat",
+                ai_severity="CRITICAL",
+                ai_summary="Suspect Unknown_User_88 sent coercive threats with explicit intent of physical confrontation ('I'm coming for you tomorrow'). Stolen photographs used in impersonation profile @shreya_official_xx.",
+                shared_with_contact_name="Aditi Sharma"
+            )
+            db.add(inc2)
+            db.flush()
+
+            # 3 Vault Items
+            ev_d1 = models.Evidence(
+                id=str(uuid.uuid4()),
+                incident_id=inc2.id,
+                evidence_type=models.EvidenceType.SCREENSHOT.value,
+                file_url="chat_unknown_user_88.jpg",
+                raw_text="Unknown_User_88: I know where you study. Stop ignoring me. You're making a big mistake. I'm coming for you tomorrow. Reply now or I'll just show up.",
+                sha256_hash="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                file_size_bytes=421888,
+                chunk_index=0
+            )
+            ev_d2 = models.Evidence(
+                id=str(uuid.uuid4()),
+                incident_id=inc2.id,
+                evidence_type=models.EvidenceType.SCREENSHOT.value,
+                file_url="fake_account_profile.jpg",
+                raw_text="Impersonation profile @shreya_official_xx using stolen photos.",
+                sha256_hash="4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
+                file_size_bytes=333824,
+                chunk_index=1
+            )
+            ev_d3 = models.Evidence(
+                id=str(uuid.uuid4()),
+                incident_id=inc2.id,
+                evidence_type=models.EvidenceType.SCREENSHOT.value,
+                file_url="impersonation_message.jpg",
+                raw_text="Phishing/OTP request message sent to contacts impersonating victim.",
+                sha256_hash="ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
+                file_size_bytes=351232,
+                chunk_index=2
+            )
+            db.add_all([ev_d1, ev_d2, ev_d3])
+
+            td1 = models.TimelineEvent(
+                id=str(uuid.uuid4()),
+                incident_id=inc2.id,
+                event_type=models.TimelineEventType.EVIDENCE_HASHED.value,
+                title="Mobile Vault Dossier Created",
+                description="Victim preserved 3 screenshot exhibits with SHA-256 fingerprinting.",
+                metadata_json={"item_count": 3}
+            )
+            td2 = models.TimelineEvent(
+                id=str(uuid.uuid4()),
+                incident_id=inc2.id,
+                event_type=models.TimelineEventType.AI_TRIAGE_COMPLETED.value,
+                title="AI Threat Classification: CRITICAL",
+                description="Assessed as Cyberstalking, Impersonation & Imminent Physical Threat. Escalation trigger: 'I'm coming for you tomorrow'.",
+                metadata_json={"severity": "CRITICAL", "category": "Cyberstalking, Impersonation & Imminent Physical Threat"}
+            )
+            td3 = models.TimelineEvent(
+                id=str(uuid.uuid4()),
+                incident_id=inc2.id,
+                event_type=models.TimelineEventType.REPORT_SHARED.value,
+                title="Vault Shared with Guardian",
+                description="Dossier securely linked to Aditi Sharma with Section 65B audit custody.",
+                metadata_json={"recipient": "Aditi Sharma"}
+            )
+            db.add_all([td1, td2, td3])
+
+        db.commit()
+        logger.info("Successfully seeded/synced Shreya demo incidents (SC-2026-0142 & SC-2026-0138).")
     except Exception as exc:
         logger.error(f"Error during demo data seeding: {exc}")
         db.rollback()

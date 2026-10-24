@@ -1,104 +1,99 @@
 import React from 'react';
-import { Radio, RefreshCw, Clock, Sparkles } from 'lucide-react';
+import { Radio, RefreshCw, Clock, MapPin, ShieldAlert, FolderOpen } from 'lucide-react';
 import type { Incident } from '../../types';
 import { StatusBadge } from '../common/StatusBadge';
 import { useGuardian } from '../../context/GuardianContext';
+import { formatIncidentId } from '../../utils/formatters';
 
 interface IncidentHeaderProps {
   incident: Incident;
 }
 
 export const IncidentHeader: React.FC<IncidentHeaderProps> = ({ incident }) => {
-  const { simulateLocationRefresh } = useGuardian();
+  const { simulateLocationRefresh, activeIncidentId, setActiveIncidentId } = useGuardian();
 
   const isPhysical = incident.type === 'PHYSICAL_SOS';
   const isActive = incident.status === 'ACTIVE';
+  const isAck = incident.status === 'ACKNOWLEDGED';
 
   return (
-    <div
-      className={`rounded-2xl border p-5 md:p-6 transition-all shadow-xl relative overflow-hidden ${
-        isActive
-          ? 'bg-gradient-to-r from-[#211424] via-[#151F35] to-[#151F35] border-[#F0525F]/50'
-          : 'bg-[#151F35] border-[#29364F]'
-      }`}
-    >
-      {/* Subtle background radar ring if active */}
-      {isActive && (
-        <div className="absolute -right-8 -top-8 w-48 h-48 rounded-full bg-[#F0525F]/5 blur-2xl pointer-events-none" />
-      )}
-
+    <div className="rounded-2xl border border-[#E8DFDA] p-6 bg-[#FFFFFF] shadow-sm relative overflow-hidden transition-all">
+      {/* Top Banner Row */}
       <div className="flex flex-wrap items-start justify-between gap-4">
-        {/* Left: Titles & IDs */}
+        {/* Left: Titles & Incident Indicators */}
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2.5">
             {isActive ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#F0525F]/20 border border-[#F0525F]/40 text-[#F0525F] text-xs font-bold tracking-wider uppercase animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-[#F0525F] animate-ping" />
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FDECEE] border border-[#F7D0D4] text-[#C84B53] text-xs font-bold tracking-wider uppercase animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-[#C84B53] animate-ping" />
                 Active Emergency
               </span>
+            ) : isAck ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F5E9] border border-[#C8E6C9] text-[#2D6A4F] text-xs font-bold tracking-wider uppercase">
+                <span className="w-2 h-2 rounded-full bg-[#2D6A4F]" />
+                Acknowledged Dossier
+              </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#1B2740] border border-[#29364F] text-[#A0AEC4] text-xs font-semibold tracking-wider uppercase">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF6F3] border border-[#E8DFDA] text-[#6E6265] text-xs font-bold tracking-wider uppercase">
                 Archived Dossier
               </span>
             )}
 
-            <StatusBadge status={incident.status} size="lg" />
+            <StatusBadge status={incident.status} size="md" />
 
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#111A2E] border border-[#29364F] text-[#6EA8FE]">
-              {incident.id}
-            </span>
-
-            <span className="text-[11px] px-2 py-0.5 rounded bg-[#1B2740] border border-[#29364F] text-[#E8B65C] flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              Demo Data
+            <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-[#FAF6F3] border border-[#E8DFDA] text-[#1F1A1C]">
+              {formatIncidentId(incident.id)}
             </span>
           </div>
 
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#F3F6FC] flex items-center gap-2">
-            {isPhysical ? 'Physical Emergency SOS Alert' : 'Digital Harassment Vault Dossier'}
+          <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-tight text-[#1F1A1C] leading-snug">
+            {isPhysical
+              ? 'Physical Emergency SOS — Shreya'
+              : 'Digital Threat & Harassment Report — Shreya'}
           </h2>
 
-          <p className="text-xs md:text-sm text-[#A0AEC4] max-w-3xl leading-relaxed">
+          <p className="text-xs md:text-sm text-[#6E6265] max-w-3xl leading-relaxed">
             {incident.description}
           </p>
         </div>
 
-        {/* Right: Actions & Telemetry Replay */}
-        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
-          <button
-            onClick={() => simulateLocationRefresh(incident.id)}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#1B2740] hover:bg-[#253655] border border-[#29364F] text-xs font-medium text-[#F3F6FC] transition-colors cursor-pointer shadow-sm hover:border-[#6EA8FE]/40"
-            title="Refresh GPS telemetry simulation"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-[#6EA8FE]" />
-            <span>Refresh Telemetry</span>
-          </button>
-        </div>
+        {/* Right: Refresh button (clean subtle control) */}
+        {isPhysical && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => simulateLocationRefresh(incident.id)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FAF6F3] hover:bg-[#F3ECE8] border border-[#E8DFDA] text-xs font-semibold text-[#1F1A1C] transition-colors cursor-pointer"
+              title="Refresh device telemetry"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-[#6E6265]" />
+              <span>Refresh Telemetry</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Sub-bar: Timestamps and Guidance */}
-      <div className="mt-4 pt-3.5 border-t border-[#29364F]/60 flex flex-wrap items-center justify-between gap-3 text-xs text-[#71809A]">
+      {/* Sub-bar: Timestamps and Route Guidance */}
+      <div className="mt-5 pt-4 border-t border-[#E8DFDA] flex flex-wrap items-center justify-between gap-3 text-xs text-[#6E6265]">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="flex items-center gap-1.5 tabular-nums">
-            <Clock className="w-3.5 h-3.5 text-[#6EA8FE]" />
+            <Clock className="w-3.5 h-3.5 text-[#C84B53]" />
             Triggered:{' '}
-            <strong className="text-[#A0AEC4] font-medium">
-              {new Date(incident.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-            </strong>{' '}
-            (Simulated UTC)
+            <strong className="text-[#1F1A1C] font-semibold">
+              {isPhysical ? '5:09 PM IST' : '20 Oct, 9:41 PM IST'}
+            </strong>
           </span>
 
           <span className="flex items-center gap-1.5 tabular-nums">
-            <Radio className="w-3.5 h-3.5 text-[#38C6A3]" />
-            Last Telemetry Ping:{' '}
-            <strong className="text-[#A0AEC4] font-medium">
-              {new Date(incident.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            <Radio className="w-3.5 h-3.5 text-[#2D6A4F]" />
+            Telemetry Status:{' '}
+            <strong className="text-[#2D6A4F] font-semibold">
+              Live Stream Synchronized
             </strong>
           </span>
         </div>
 
-        <div className="text-[11px] text-[#A0AEC4] italic">
-          "Review live location & incoming chunks, then formally acknowledge to coordinate emergency assistance."
+        <div className="text-[11px] text-[#6E6265] font-medium">
+          Bengaluru Metro Transit Corridor • Guardian Companion Active
         </div>
       </div>
     </div>

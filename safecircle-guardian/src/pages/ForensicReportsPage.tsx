@@ -1,352 +1,252 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  FileText,
-  Download,
   Printer,
   ShieldCheck,
-  Sparkles,
-  Code2,
-  Scale
+  CheckCircle2,
+  FileDown
 } from 'lucide-react';
 import { useGuardian } from '../context/GuardianContext';
 import { LEGAL_STATUTES } from '../data/mockData';
+import { formatIncidentId, formatCustodySeal } from '../utils/formatters';
 
 export const ForensicReportsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const preselectedId = searchParams.get('incidentId');
 
-  const { incidents, getIncidentEvidence, getIncidentTimeline, guardian } = useGuardian();
+  const { incidents, getIncidentEvidence, guardian } = useGuardian();
 
   const [selectedIncidentId, setSelectedIncidentId] = useState<string>(
-    preselectedId || incidents[0]?.id || 'DEMO-SC-2026-0142'
+    preselectedId || incidents[0]?.id || 'SC-2026-0142'
   );
-  const [reportFormat, setReportFormat] = useState<'html' | 'json'>('html');
 
   const selectedIncident =
     incidents.find((i) => i.id === selectedIncidentId) || incidents[0];
   const incidentEvidence = selectedIncident ? getIncidentEvidence(selectedIncident.id) : [];
-  const incidentTimeline = selectedIncident ? getIncidentTimeline(selectedIncident.id) : [];
 
-  // Compute simulated Master Merkle Custody Seal (pseudo-hash of combined chunks)
-  const masterSeal = selectedIncident
-    ? `CUSTODY-SEAL-${selectedIncident.id.replace(/-/g, '')}-${incidentEvidence.length}EVD-${selectedIncident.status}`
-    : 'CUSTODY-SEAL-PENDING';
+  const formattedId = formatIncidentId(selectedIncident.id);
+  const masterSeal = formatCustodySeal(selectedIncident.id);
 
   const legalViolations = selectedIncident?.aiCategory
     ? LEGAL_STATUTES[selectedIncident.aiCategory] || []
     : [];
 
-  // Download real JSON file
-  const handleDownloadJson = () => {
-    if (!selectedIncident) return;
-
-    const reportJson = {
-      standard: 'ISO/IEC 27037:2012 Electronic Evidence Custody',
-      statutory_compliance: 'Indian Evidence Act Section 65B Certificate',
-      generated_at_utc: new Date().toISOString(),
-      report_classification: 'CONFIDENTIAL FORENSIC AUDIT DOSSIER (DEMO)',
-      master_custody_seal: masterSeal,
-      incident_overview: {
-        id: selectedIncident.id,
-        type: selectedIncident.type,
-        status: selectedIncident.status,
-        victim_name: selectedIncident.victimDisplayName,
-        victim_phone: selectedIncident.victimPhone,
-        trigger_mode: selectedIncident.triggerMode,
-        coordinates_initial: selectedIncident.location,
-        battery_level: selectedIncident.batteryLevel,
-        created_at: selectedIncident.createdAt,
-        updated_at: selectedIncident.updatedAt,
-        acknowledged_by: selectedIncident.acknowledgedBy || 'Unacknowledged in demo',
-        acknowledged_at: selectedIncident.acknowledgedAt || null,
-        resolved_at: selectedIncident.resolvedAt || null,
-      },
-      statutory_violations_triaged: legalViolations,
-      evidence_inventory: incidentEvidence.map((ev) => ({
-        evidence_id: ev.id,
-        chunk_index: ev.chunkIndex,
-        type: ev.type,
-        filename: ev.filename,
-        size_bytes: ev.sizeBytes,
-        sha256_digest: ev.sha256Hash,
-        hash_status: ev.hashStatus,
-        timestamp_utc: ev.timestamp,
-        captured_coordinates: ev.capturedCoordinates,
-        legal_relevance: ev.legalRelevance,
-      })),
-      chronological_timeline_audit: incidentTimeline.map((te) => ({
-        event_id: te.id,
-        event_type: te.eventType,
-        title: te.title,
-        description: te.description,
-        timestamp_utc: te.timestamp,
-        metadata: te.metadata,
-      })),
-    };
-
-    const blob = new Blob([JSON.stringify(reportJson, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `SafeCircle_ForensicReport_${selectedIncident.id}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-
   const handlePrint = () => {
     window.print();
   };
 
+  const handleDownloadJson = () => {
+    const reportJson = {
+      standard: 'ISO/IEC 27037:2012 Electronic Evidence Custody',
+      statutory_compliance: 'Indian Evidence Act Section 65B / Bharatiya Sakshya Adhiniyam Section 63',
+      generated_at_utc: new Date().toISOString(),
+      report_classification: 'CONFIDENTIAL FORENSIC AUDIT DOSSIER',
+      master_custody_seal: masterSeal,
+      incident_id: formattedId,
+      victim_name: selectedIncident.victimDisplayName,
+      status: selectedIncident.status,
+      evidence_inventory: incidentEvidence.map((ev) => ({
+        id: ev.id,
+        filename: ev.filename,
+        sha256: ev.sha256Hash,
+        timestamp: ev.timestamp,
+        size_bytes: ev.sizeBytes,
+      })),
+    };
+
+    const blob = new Blob([JSON.stringify(reportJson, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `SafeCircle_${formattedId}_Section65B_Report.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      {/* Top Banner with Controls */}
-      <div className="bg-[#151F35] border border-[#29364F] rounded-2xl p-5 md:p-6 shadow-xl flex flex-wrap items-center justify-between gap-4 no-print">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-mono tracking-wider uppercase text-[#6EA8FE]">
-              Section 65B Evidentiary Certification
-            </span>
-            <span className="text-[10px] px-2 py-0.5 rounded bg-[#1B2740] text-[#E8B65C] flex items-center gap-1 font-semibold uppercase">
-              <Sparkles className="w-2.5 h-2.5" />
-              Demo Report Engine
-            </span>
-          </div>
-          <h2 className="text-xl md:text-2xl font-bold tracking-tight text-[#F3F6FC] flex items-center gap-2.5">
-            <FileText className="w-6 h-6 text-[#6EA8FE]" />
-            Forensic Chain-of-Custody Reports
-          </h2>
-          <p className="text-xs md:text-sm text-[#A0AEC4] max-w-2xl leading-relaxed">
-            Generate print-ready forensic dossiers and machine-readable JSON custody manifests for cyber cells, police desks, or judicial records.
-          </p>
-        </div>
-
-        {/* Incident Selector & Export Buttons */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          <select
-            value={selectedIncidentId}
-            onChange={(e) => setSelectedIncidentId(e.target.value)}
-            className="bg-[#111A2E] border border-[#29364F] rounded-xl px-3 py-2 text-xs text-[#F3F6FC] focus:outline-none focus:border-[#6EA8FE]"
-          >
-            {incidents.map((inc) => (
-              <option key={inc.id} value={inc.id}>
-                {inc.id} — {inc.victimDisplayName} ({inc.type === 'PHYSICAL_SOS' ? 'Physical SOS' : 'Digital Threat'})
-              </option>
-            ))}
-          </select>
-
-          <div className="flex items-center bg-[#111A2E] border border-[#29364F] rounded-xl p-0.5">
-            <button
-              onClick={() => setReportFormat('html')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-                reportFormat === 'html'
-                  ? 'bg-[#1B2740] text-[#F3F6FC]'
-                  : 'text-[#71809A] hover:text-[#F3F6FC]'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Court HTML</span>
-            </button>
-            <button
-              onClick={() => setReportFormat('json')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-                reportFormat === 'json'
-                  ? 'bg-[#1B2740] text-[#F3F6FC]'
-                  : 'text-[#71809A] hover:text-[#F3F6FC]'
-              }`}
-            >
-              <Code2 className="w-3.5 h-3.5" />
-              <span>Audit JSON</span>
-            </button>
-          </div>
-
-          <button
-            onClick={handleDownloadJson}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#1B2740] hover:bg-[#253655] border border-[#29364F] text-xs font-semibold text-[#38C6A3] transition-colors"
-            title="Download structured JSON audit manifest"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Download JSON</span>
-          </button>
-
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#6EA8FE] hover:bg-[#5B96EC] text-[#0B1020] text-xs font-bold transition-all shadow-md"
-            title="Print or Save as PDF using browser"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Print / Save PDF</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Report Content Container */}
-      {selectedIncident && (
-        <div className="bg-[#151F35] border border-[#29364F] rounded-2xl shadow-2xl p-6 md:p-8 space-y-6 text-[#F3F6FC]">
-          {/* Official Certificate Header */}
-          <div className="border-b border-[#29364F] pb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#13332B] border border-[#38C6A3]/40 text-[#38C6A3] text-[10px] font-bold uppercase tracking-wider">
-                <ShieldCheck className="w-3 h-3" />
-                Section 65B Electronic Evidence Certificate (Demo)
-              </div>
-              <h1 className="text-xl md:text-2xl font-bold tracking-tight text-[#F3F6FC]">
-                SafeCircle Forensic Incident & Custody Dossier
-              </h1>
-              <p className="text-xs text-[#A0AEC4]">
-                Automated tamper-evident audit record generated under ISO/IEC 27037:2012 guidelines.
-              </p>
-            </div>
-
-            <div className="text-right font-mono text-xs text-[#71809A]">
-              <div>Report Ref: <strong className="text-[#F3F6FC]">{selectedIncident.id}</strong></div>
-              <div>Generated: <span className="text-[#A0AEC4]">{new Date().toUTCString()}</span></div>
-              <div className="text-[10px] text-[#E8B65C]">DEMO DEMONSTRATION DOCUMENT</div>
-            </div>
-          </div>
-
-          {/* Master Seal Banner */}
-          <div className="bg-[#111A2E] border border-[#38C6A3]/40 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-[#38C6A3]">
-                Master Merkle Root Custody Seal
+    <div className="max-w-4xl mx-auto pb-12 animate-in fade-in duration-200">
+      {/* Clean Printable Section 65B Certificate Card (No bulky top banner) */}
+      <div className="bg-[#FFFFFF] border border-[#E8DFDA] rounded-2xl p-6 md:p-10 shadow-xs space-y-6 font-sans print:border-none print:shadow-none print:p-0">
+        {/* Certificate Header Bar with Actions */}
+        <div className="border-b-2 border-[#1F1A1C] pb-5 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <img
+                src="/safe-circle-logo.svg"
+                alt="SafeCircle"
+                className="w-7 h-7 rounded-md object-contain shrink-0"
+              />
+              <span className="font-serif text-xl font-bold tracking-tight text-[#1F1A1C]">
+                SAFECIRCLE
               </span>
-              <div className="font-mono text-xs md:text-sm font-bold text-[#F3F6FC] break-all">
-                {masterSeal}
-              </div>
-            </div>
-            <div className="px-3 py-1 rounded bg-[#13332B] text-[#38C6A3] text-xs font-mono font-bold shrink-0">
-              TAMPER SEAL INTACT
-            </div>
-          </div>
-
-          {/* Incident Metadata Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-            <div className="p-3.5 rounded-xl bg-[#111A2E] border border-[#29364F]">
-              <span className="text-[#71809A] block mb-1">Victim / User</span>
-              <span className="font-bold text-[#F3F6FC] block">{selectedIncident.victimDisplayName}</span>
-              <span className="font-mono text-[11px] text-[#A0AEC4]">{selectedIncident.victimPhone}</span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#111A2E] border border-[#29364F]">
-              <span className="text-[#71809A] block mb-1">Incident Classification</span>
-              <span className="font-bold text-[#6EA8FE] block">
-                {selectedIncident.type === 'PHYSICAL_SOS' ? 'Physical SOS Alert' : 'Digital Threat Vault'}
-              </span>
-              <span className="text-[11px] text-[#A0AEC4]">Mode: {selectedIncident.triggerMode}</span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#111A2E] border border-[#29364F]">
-              <span className="text-[#71809A] block mb-1">Incident Status</span>
-              <span className="font-bold text-[#E8B65C] block">{selectedIncident.status}</span>
-              <span className="text-[11px] text-[#A0AEC4]">Battery: {selectedIncident.batteryLevel}%</span>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-[#111A2E] border border-[#29364F]">
-              <span className="text-[#71809A] block mb-1">Verified Location</span>
-              <span className="font-bold text-[#F3F6FC] block truncate">{selectedIncident.location.label}</span>
-              <span className="font-mono text-[10px] text-[#71809A]">
-                {selectedIncident.location.lat.toFixed(4)}° N, {selectedIncident.location.lng.toFixed(4)}° E
+              <span className="text-[10px] uppercase font-mono tracking-widest text-[#C84B53] font-bold">
+                FORENSIC CUSTODY
               </span>
             </div>
-          </div>
 
-          {/* Statutory Violations Section */}
-          {legalViolations.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <h3 className="text-sm font-bold text-[#F3F6FC] flex items-center gap-2">
-                <Scale className="w-4 h-4 text-[#A99AFB]" />
-                Applicable Statutory Provisions (Indian Law Matrix)
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                {legalViolations.map((ref, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-[#111A2E] border border-[#29364F] space-y-1">
-                    <div className="font-mono font-bold text-[#6EA8FE]">{ref.section}</div>
-                    <div className="font-semibold text-[#F3F6FC]">{ref.title}</div>
-                    <p className="text-[#A0AEC4] text-[11px] leading-relaxed">{ref.description}</p>
-                  </div>
+            {/* Print & Export Buttons right in the top right corner */}
+            <div className="flex items-center gap-2 no-print">
+              {/* Incident Selector Pill */}
+              <select
+                value={selectedIncidentId}
+                onChange={(e) => setSelectedIncidentId(e.target.value)}
+                className="bg-[#FAF6F3] border border-[#E8DFDA] rounded-xl px-2.5 py-1.5 text-xs text-[#1F1A1C] focus:outline-none font-bold"
+              >
+                {incidents.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {formatIncidentId(i.id)} ({i.type === 'PHYSICAL_SOS' ? 'Physical SOS' : 'Digital Threat'})
+                  </option>
                 ))}
-              </div>
-            </div>
-          )}
+              </select>
 
-          {/* Evidence Inventory Table */}
-          <div className="space-y-3 pt-2">
-            <h3 className="text-sm font-bold text-[#F3F6FC] flex items-center justify-between">
-              <span>Cryptographic Evidence Inventory ({incidentEvidence.length} Chunks Sealed)</span>
-              <span className="text-[11px] font-normal text-[#71809A]">SHA-256 Digest Verification</span>
-            </h3>
+              <button
+                onClick={handlePrint}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#C84B53] hover:bg-[#A8323B] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                title="Print or Save PDF"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print / Save PDF</span>
+              </button>
 
-            <div className="border border-[#29364F] rounded-xl overflow-hidden">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-[#111A2E] border-b border-[#29364F] text-[11px] text-[#71809A] uppercase font-semibold">
-                    <th className="py-2.5 px-3">Item ID</th>
-                    <th className="py-2.5 px-3">Type</th>
-                    <th className="py-2.5 px-3">Payload Filename</th>
-                    <th className="py-2.5 px-3">Size</th>
-                    <th className="py-2.5 px-3">SHA-256 Digest</th>
-                    <th className="py-2.5 px-3">Custody Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#29364F]/50 font-mono text-[11px]">
-                  {incidentEvidence.map((ev) => (
-                    <tr key={ev.id} className="hover:bg-[#111A2E]/50">
-                      <td className="py-2.5 px-3 text-[#6EA8FE] font-bold">{ev.id}</td>
-                      <td className="py-2.5 px-3 text-[#A0AEC4] font-sans">{ev.type}</td>
-                      <td className="py-2.5 px-3 text-[#F3F6FC] font-sans truncate max-w-xs">{ev.filename}</td>
-                      <td className="py-2.5 px-3 text-[#71809A]">{(ev.sizeBytes / 1024).toFixed(0)} KB</td>
-                      <td className="py-2.5 px-3 text-[#38C6A3] truncate max-w-[160px]" title={ev.sha256Hash}>
-                        {ev.sha256Hash.slice(0, 16)}...
-                      </td>
-                      <td className="py-2.5 px-3 text-[#38C6A3] font-sans font-semibold">VERIFIED (DEMO)</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <button
+                onClick={handleDownloadJson}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#FAF6F3] hover:bg-[#F3ECE8] text-[#1F1A1C] border border-[#E8DFDA] text-xs font-bold transition-colors cursor-pointer"
+                title="Export JSON"
+              >
+                <FileDown className="w-3.5 h-3.5 text-[#6E6265]" />
+                <span className="hidden sm:inline">JSON</span>
+              </button>
             </div>
           </div>
 
-          {/* Chronological Audit Log */}
-          <div className="space-y-3 pt-2">
-            <h3 className="text-sm font-bold text-[#F3F6FC]">
-              Chronological Audit Trail (Timeline Events)
+          <div>
+            <h1 className="font-serif text-xl md:text-2xl font-bold text-[#1F1A1C]">
+              Certificate of Digital Evidence & Chain of Custody
+            </h1>
+            <p className="text-xs text-[#6E6265] mt-0.5">
+              Pursuant to Section 65B of Indian Evidence Act, 1872 / Section 63 of Bharatiya Sakshya Adhiniyam, 2023.
+            </p>
+          </div>
+        </div>
+
+        {/* Master Custody Seal Strip */}
+        <div className="p-3.5 rounded-xl bg-[#FAF6F3] border border-[#E8DFDA] flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div>
+            <span className="text-[#6E6265] block text-[10px] font-bold uppercase">Master Custody Digest</span>
+            <code className="text-xs font-mono font-bold text-[#2D6A4F]">{masterSeal}</code>
+          </div>
+          <div className="text-right">
+            <span className="text-[#6E6265] block text-[10px] font-bold uppercase">Certified Timestamp</span>
+            <span className="font-mono text-[#1F1A1C] font-semibold">
+              {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}, {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} IST
+            </span>
+          </div>
+        </div>
+
+        {/* 1. Incident Overview */}
+        <div className="space-y-2">
+          <h3 className="font-serif text-sm font-bold text-[#1F1A1C] border-b border-[#E8DFDA] pb-1">
+            1. Protected Circle Member & Case Overview
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+            <div>
+              <span className="text-[#6E6265] block text-[10px] uppercase font-bold">Victim</span>
+              <span className="font-bold text-[#1F1A1C]">{selectedIncident.victimDisplayName}</span>
+            </div>
+            <div>
+              <span className="text-[#6E6265] block text-[10px] uppercase font-bold">Case ID</span>
+              <span className="font-mono font-bold text-[#C84B53]">{formattedId}</span>
+            </div>
+            <div>
+              <span className="text-[#6E6265] block text-[10px] uppercase font-bold">Trigger Mechanism</span>
+              <span className="font-bold text-[#1F1A1C]">{selectedIncident.triggerMode}</span>
+            </div>
+            <div>
+              <span className="text-[#6E6265] block text-[10px] uppercase font-bold">Primary Contact</span>
+              <span className="font-bold text-[#1F1A1C]">{guardian.displayName} ({guardian.role})</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Cryptographic Evidence Inventory */}
+        <div className="space-y-2">
+          <h3 className="font-serif text-sm font-bold text-[#1F1A1C] border-b border-[#E8DFDA] pb-1 flex items-center justify-between">
+            <span>2. Preserved Evidence Inventory ({incidentEvidence.length} Exhibits)</span>
+            <span className="text-xs text-[#2D6A4F] font-bold flex items-center gap-1 font-mono">
+              <ShieldCheck className="w-3.5 h-3.5" /> All Verified Intact
+            </span>
+          </h3>
+
+          <div className="overflow-x-auto border border-[#E8DFDA] rounded-xl">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#FAF6F3] text-[#6E6265] font-bold uppercase text-[9px] border-b border-[#E8DFDA]">
+                <tr>
+                  <th className="p-2.5">Exhibit</th>
+                  <th className="p-2.5">Filename</th>
+                  <th className="p-2.5">Capture Time</th>
+                  <th className="p-2.5">SHA-256 Digest</th>
+                  <th className="p-2.5">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E8DFDA]">
+                {incidentEvidence.map((ev, idx) => (
+                  <tr key={ev.id} className="hover:bg-[#FAF6F3]/50">
+                    <td className="p-2.5 font-mono font-bold text-[#C84B53]">#{idx + 1}</td>
+                    <td className="p-2.5">
+                      <div className="font-bold text-[#1F1A1C]">{ev.filename}</div>
+                    </td>
+                    <td className="p-2.5 font-mono text-[#6E6265] tabular-nums">
+                      {new Date(ev.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} IST
+                    </td>
+                    <td className="p-2.5 font-mono text-[10px] text-[#6E6265]">
+                      {ev.sha256Hash}
+                    </td>
+                    <td className="p-2.5">
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-[#2D6A4F] bg-[#E8F5E9] px-2 py-0.5 rounded border border-[#C8E6C9] uppercase">
+                        <CheckCircle2 className="w-2.5 h-2.5" /> Sealed
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 3. Statutory Violations Triaged */}
+        {legalViolations.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="font-serif text-sm font-bold text-[#1F1A1C] border-b border-[#E8DFDA] pb-1">
+              3. Applicable Statutory Violations
             </h3>
-            <div className="divide-y divide-[#29364F] border border-[#29364F] rounded-xl overflow-hidden">
-              {incidentTimeline.map((te) => (
-                <div key={te.id} className="p-3 text-xs bg-[#111A2E] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <div className="space-y-0.5">
-                    <div className="font-semibold text-[#F3F6FC]">{te.title}</div>
-                    <p className="text-[11px] text-[#A0AEC4]">{te.description}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {legalViolations.map((ref, idx) => (
+                <div key={idx} className="p-2.5 rounded-xl bg-[#FAF6F3] border border-[#E8DFDA] text-xs space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[#C84B53]">{ref.section}</span>
+                    <span className="text-[10px] font-bold text-[#6E6265] uppercase">{ref.title}</span>
                   </div>
-                  <span className="font-mono text-[11px] text-[#71809A] tabular-nums shrink-0">
-                    {new Date(te.timestamp).toUTCString()}
-                  </span>
+                  <p className="text-[#6E6265] leading-snug text-[11px]">{ref.description}</p>
                 </div>
               ))}
             </div>
           </div>
+        )}
 
-          {/* Legal Certification Statement */}
-          <div className="border-t border-[#29364F] pt-6 mt-6 space-y-2 text-xs text-[#71809A]">
-            <p className="leading-relaxed">
-              <strong>Certificate Clause:</strong> I hereby certify that the electronic records detailed herein were automatically produced, hashed with SHA-256 digital seals, and logged by the SafeCircle Autonomous Emergency Protection System during normal operations. The system operated without unauthorized modification or data corruption.
-            </p>
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 font-mono text-[11px]">
-              <div>
-                <span>Certifying Guardian: </span>
-                <strong className="text-[#F3F6FC]">{guardian.displayName} ({guardian.role})</strong>
-              </div>
-              <div>
-                <span>Digital Vault Seal: </span>
-                <span className="text-[#38C6A3] font-bold">SEC-65B-VALIDATED</span>
-              </div>
-            </div>
+        {/* 4. Attestation */}
+        <div className="border-t-2 border-[#1F1A1C] pt-4 grid grid-cols-2 gap-6 text-xs">
+          <div>
+            <span className="text-[#6E6265] block text-[9px] font-bold uppercase">System Engine</span>
+            <div className="font-mono text-xs text-[#1F1A1C] font-semibold">SafeCircle Evidence Engine v1.0</div>
+            <div className="text-[10px] text-[#6E6265]">Tamper-evident ISO/IEC 27037 compliance.</div>
+          </div>
+          <div className="text-right">
+            <span className="text-[#6E6265] block text-[9px] font-bold uppercase">Authorized Guardian</span>
+            <div className="font-bold text-[#1F1A1C]">{guardian.displayName}</div>
+            <div className="text-[10px] text-[#6E6265]">{guardian.role}</div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

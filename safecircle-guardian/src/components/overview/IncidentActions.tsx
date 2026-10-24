@@ -1,111 +1,95 @@
 import React, { useState } from 'react';
-import { ShieldCheck, CheckCircle2, Film } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, CheckCircle2, FileDown, Check, AlertCircle } from 'lucide-react';
 import type { Incident } from '../../types';
 import { useGuardian } from '../../context/GuardianContext';
-import { ConfirmDialog } from '../common/ConfirmDialog';
 
 interface IncidentActionsProps {
   incident: Incident;
 }
 
 export const IncidentActions: React.FC<IncidentActionsProps> = ({ incident }) => {
-  const { acknowledgeIncident, resolveIncident, simulateIncomingEvidence, guardian } = useGuardian();
-
-  const [showAckDialog, setShowAckDialog] = useState(false);
-  const [showResolveDialog, setShowResolveDialog] = useState(false);
+  const navigate = useNavigate();
+  const { acknowledgeIncident, resolveIncident, guardian } = useGuardian();
 
   const isResolved = incident.status === 'RESOLVED';
   const isAcknowledged = incident.status === 'ACKNOWLEDGED';
 
+  const handleAcknowledge = () => {
+    acknowledgeIncident(incident.id, `${guardian.displayName} (Sister / Primary Contact)`);
+  };
+
+  const handleResolve = () => {
+    resolveIncident(incident.id, `Incident marked resolved by ${guardian.displayName}. Victim safely assisted.`);
+  };
+
+  const handleDownloadPdf = () => {
+    navigate(`/reports?incidentId=${incident.id}`);
+  };
+
   return (
-    <div className="bg-[#151F35] border border-[#29364F] rounded-2xl p-4 md:p-5 shadow-lg flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-      <div className="space-y-0.5">
-        <h3 className="text-sm font-bold text-[#F3F6FC] flex items-center gap-2">
-          <span>Primary Command Actions</span>
-          <span className="text-[10px] font-normal uppercase px-2 py-0.5 rounded bg-[#1B2740] text-[#71809A]">
-            Guardian Controls
-          </span>
-        </h3>
-        <p className="text-xs text-[#A0AEC4]">
-          {isResolved
-            ? 'This incident has been finalized and archived in the tamper-evident vault.'
-            : isAcknowledged
-            ? 'Alert is acknowledged. Ongoing coordination active. Mark resolved when victim is safe.'
-            : 'Alert is unacknowledged. Immediate verification recommended.'}
-        </p>
+    <div className="bg-[#FFFFFF] border border-[#E8DFDA] rounded-2xl p-5 shadow-sm space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-[#E8DFDA] pb-3">
+        <div>
+          <h3 className="font-serif text-base font-bold text-[#1F1A1C] leading-none">
+            Guardian Action Bar
+          </h3>
+          <p className="text-[11px] text-[#6E6265] mt-1">
+            Formal response dispatch & legal forensic export
+          </p>
+        </div>
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FAF6F3] border border-[#E8DFDA] text-[#6E6265] font-semibold uppercase">
+          Authorized Contact
+        </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2.5">
-        {/* Simulate Incoming Evidence Chunk */}
-        {!isResolved && (
+      {/* Action Buttons Stack */}
+      <div className="space-y-2.5">
+        {/* Prominent Acknowledge Button */}
+        {isAcknowledged || isResolved ? (
+          <div className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#E8F5E9] border-2 border-[#C8E6C9] text-xs font-bold text-[#2D6A4F] shadow-xs">
+            <Check className="w-4 h-4 text-[#2D6A4F]" />
+            <span>Alert Acknowledged by {incident.acknowledgedBy || 'Aditi Sharma'}</span>
+          </div>
+        ) : (
           <button
-            onClick={() => simulateIncomingEvidence(incident.id)}
-            className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#1B2740] hover:bg-[#253655] border border-[#29364F] text-xs font-semibold text-[#6EA8FE] transition-colors cursor-pointer shadow-sm hover:border-[#6EA8FE]/40"
-            title="Simulate device transmitting an incoming 4.0s stealth chunk"
-          >
-            <Film className="w-4 h-4 text-[#6EA8FE]" />
-            <span>Simulate Incoming Chunk</span>
-          </button>
-        )}
-
-        {/* Acknowledge Action */}
-        {!isResolved && (
-          <button
-            onClick={() => setShowAckDialog(true)}
-            disabled={isAcknowledged}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-md cursor-pointer ${
-              isAcknowledged
-                ? 'bg-[#1E2538] text-[#71809A] border border-[#29364F] cursor-not-allowed'
-                : 'bg-[#E8B65C] hover:bg-[#D4A349] text-[#0B1020] hover:shadow-[#E8B65C]/20'
-            }`}
+            onClick={handleAcknowledge}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#C84B53] hover:bg-[#A8323B] text-white text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer transform active:scale-98"
           >
             <ShieldCheck className="w-4 h-4" />
-            <span>{isAcknowledged ? 'Alert Acknowledged' : 'Acknowledge Alert'}</span>
+            <span>Acknowledge Alert (Dispatch Response)</span>
           </button>
         )}
 
-        {/* Resolve Action */}
-        <button
-          onClick={() => setShowResolveDialog(true)}
-          disabled={isResolved}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold transition-all shadow-md cursor-pointer ${
-            isResolved
-              ? 'bg-[#14232B] text-[#38C6A3] border border-[#38C6A3]/40 cursor-default'
-              : 'bg-[#38C6A3] hover:bg-[#2EB090] text-[#0B1020] hover:shadow-[#38C6A3]/20'
-          }`}
-        >
-          <CheckCircle2 className="w-4 h-4" />
-          <span>{isResolved ? 'Incident Resolved' : 'Resolve Incident'}</span>
-        </button>
+        {/* Secondary Action Row: Resolve & Download PDF */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            onClick={handleResolve}
+            disabled={isResolved}
+            className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+              isResolved
+                ? 'bg-[#E8F5E9] text-[#2D6A4F] border border-[#C8E6C9] cursor-default'
+                : 'bg-[#FAF6F3] hover:bg-[#F3ECE8] text-[#1F1A1C] border border-[#E8DFDA] cursor-pointer'
+            }`}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 text-[#2D6A4F]" />
+            <span>{isResolved ? 'Resolved' : 'Resolve Incident'}</span>
+          </button>
+
+          <button
+            onClick={handleDownloadPdf}
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-[#FAF6F3] hover:bg-[#F3ECE8] text-[#1F1A1C] border border-[#E8DFDA] text-xs font-bold transition-colors cursor-pointer"
+          >
+            <FileDown className="w-3.5 h-3.5 text-[#C84B53]" />
+            <span>Download PDF</span>
+          </button>
+        </div>
       </div>
 
-      {/* Confirmation Dialog: Acknowledge */}
-      <ConfirmDialog
-        isOpen={showAckDialog}
-        onClose={() => setShowAckDialog(false)}
-        onConfirm={() => acknowledgeIncident(incident.id, `${guardian.displayName} (${guardian.role})`)}
-        title="Formally Acknowledge Alert?"
-        description={`You are acknowledging the emergency SOS for ${incident.victimDisplayName}. This simulated action will update the incident state to ACKNOWLEDGED, record your timestamp in the forensic audit trail, and notify trusted contacts.`}
-        incidentId={incident.id}
-        confirmLabel="Confirm Acknowledgment"
-        confirmVariant="primary"
-        icon="shield"
-        subNote="Simulated action for frontend demo. In production, this notifies backend via /api/incidents/token/:token/acknowledge."
-      />
-
-      {/* Confirmation Dialog: Resolve */}
-      <ConfirmDialog
-        isOpen={showResolveDialog}
-        onClose={() => setShowResolveDialog(false)}
-        onConfirm={() => resolveIncident(incident.id, `Incident marked resolved by ${guardian.displayName}. Victim verified safe.`)}
-        title="Mark Incident as Resolved?"
-        description={`Confirming resolution will change the incident status to RESOLVED, seal all recorded evidence chunks in the forensic vault, and mark victim ${incident.victimDisplayName} as safe.`}
-        incidentId={incident.id}
-        confirmLabel="Confirm Resolution"
-        confirmVariant="success"
-        icon="check"
-        subNote="In production, this finalizes the Section 65B forensic chain-of-custody report."
-      />
+      <div className="text-[11px] text-[#6E6265] pt-1">
+        Acknowledging notifies the victim's Circle and records your cryptographic signature in the Section 65B forensic audit trail.
+      </div>
     </div>
   );
 };

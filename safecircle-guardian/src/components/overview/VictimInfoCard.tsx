@@ -11,25 +11,25 @@ interface VictimInfoCardProps {
 export const VictimInfoCard: React.FC<VictimInfoCardProps> = ({ incident, evidenceCount }) => {
   const isPhysical = incident.type === 'PHYSICAL_SOS';
 
-  let batteryColor = 'text-[#38C6A3]';
-  if (incident.batteryLevel < 20) batteryColor = 'text-[#F0525F]';
-  else if (incident.batteryLevel < 50) batteryColor = 'text-[#E8B65C]';
+  let batteryColor = 'text-[#2D6A4F]';
+  if (incident.batteryLevel < 20) batteryColor = 'text-[#C84B53]';
+  else if (incident.batteryLevel < 50) batteryColor = 'text-[#D97706]';
 
   return (
-    <div className="bg-[#151F35] border border-[#29364F] rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+    <div className="bg-[#FFFFFF] border border-[#E8DFDA] rounded-2xl p-5 shadow-sm flex flex-col justify-between">
       <div>
         {/* Card Header */}
-        <div className="flex items-center justify-between border-b border-[#29364F] pb-3 mb-4">
+        <div className="flex items-center justify-between border-b border-[#E8DFDA] pb-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-[#1B2740] border border-[#29364F] text-[#6EA8FE]">
+            <div className="p-2 rounded-xl bg-[#FAF6F3] border border-[#E8DFDA] text-[#C84B53]">
               <User className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-[#F3F6FC] leading-none">
-                Victim & Incident Profile
+              <h3 className="font-serif text-sm font-bold text-[#1F1A1C] leading-none">
+                Protected Member Profile
               </h3>
-              <span className="text-[11px] text-[#71809A]">
-                Protected Circle Member
+              <span className="text-[11px] text-[#6E6265]">
+                SafeCircle Circle Network
               </span>
             </div>
           </div>
@@ -37,106 +37,99 @@ export const VictimInfoCard: React.FC<VictimInfoCardProps> = ({ incident, eviden
         </div>
 
         {/* Profile Details List */}
-        <div className="space-y-3.5 text-xs">
+        <div className="space-y-3 text-xs">
           {/* Victim Name & Phone */}
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A] flex items-center gap-1.5">
+            <span className="text-[#6E6265] flex items-center gap-1.5">
               <User className="w-3.5 h-3.5" />
-              Victim Name
+              Name
             </span>
-            <span className="font-semibold text-[#F3F6FC]">
+            <span className="font-bold text-[#1F1A1C]">
               {incident.victimDisplayName}
             </span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A] flex items-center gap-1.5">
+            <span className="text-[#6E6265] flex items-center gap-1.5">
               <Phone className="w-3.5 h-3.5" />
-              Registered Phone
+              Phone
             </span>
-            <span className="font-mono text-[#A0AEC4]">
+            <span className="font-mono text-[#1F1A1C]">
               {incident.victimPhone}
             </span>
           </div>
 
           {/* Incident Type */}
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A] flex items-center gap-1.5">
+            <span className="text-[#6E6265] flex items-center gap-1.5">
               <Shield className="w-3.5 h-3.5" />
-              Incident Type
+              Type
             </span>
-            <span className="px-2 py-0.5 rounded bg-[#1B2740] font-medium text-[#F3F6FC]">
+            <span className="px-2 py-0.5 rounded-md bg-[#FAF6F3] font-bold text-[#1F1A1C] border border-[#E8DFDA]">
               {isPhysical ? 'Physical Emergency SOS' : 'Digital Threat Vault'}
             </span>
           </div>
 
           {/* Trigger Mode */}
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A]">Trigger Mechanism</span>
-            <span className="font-mono text-[11px] text-[#A0AEC4] bg-[#111A2E] px-2 py-0.5 rounded border border-[#29364F]">
+            <span className="text-[#6E6265]">Trigger Mechanism</span>
+            <span className="font-mono text-[11px] text-[#C84B53] font-bold bg-[#FDECEE] px-2 py-0.5 rounded border border-[#F7D0D4]">
               {incident.triggerMode}
             </span>
           </div>
 
           {/* Activation Time */}
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A] flex items-center gap-1.5">
+            <span className="text-[#6E6265] flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" />
-              Activated At
+              Activated
             </span>
-            <span className="tabular-nums font-mono text-[#A0AEC4]">
-              {new Date(incident.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+            <span className="tabular-nums font-mono text-[#1F1A1C]">
+              {new Date(incident.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} IST
             </span>
           </div>
 
           {/* Battery Level */}
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A] flex items-center gap-1.5">
+            <span className="text-[#6E6265] flex items-center gap-1.5">
               <Battery className="w-3.5 h-3.5" />
-              Device Battery
+              Battery
             </span>
             <span className={`font-mono font-bold tabular-nums flex items-center gap-1.5 ${batteryColor}`}>
               <span>{incident.batteryLevel}%</span>
-              <span className="text-[10px] text-[#71809A] font-normal">
-                {incident.batteryLevel > 70 ? '(Optimal)' : '(Monitor)'}
+              <span className="text-[10px] text-[#6E6265] font-normal">
+                (Power Save Active)
               </span>
             </span>
           </div>
 
           {/* Evidence Count */}
           <div className="flex items-center justify-between">
-            <span className="text-[#71809A] flex items-center gap-1.5">
+            <span className="text-[#6E6265] flex items-center gap-1.5">
               <Film className="w-3.5 h-3.5" />
-              Preserved Artifacts
+              Evidence Sealed
             </span>
-            <span className="px-2 py-0.5 rounded bg-[#1B2740] border border-[#29364F] text-[#38C6A3] font-bold tabular-nums">
-              {evidenceCount} Chunks Sealed
+            <span className="px-2 py-0.5 rounded bg-[#E8F5E9] border border-[#C8E6C9] text-[#2D6A4F] font-bold tabular-nums">
+              {evidenceCount} Exhibits
             </span>
           </div>
 
           {/* Location Summary */}
-          <div className="pt-2 border-t border-[#29364F]/60">
-            <div className="text-[11px] text-[#71809A] mb-1 flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-[#F0525F]" />
-              Latest Location (Simulated Demo Pin)
+          <div className="pt-2 border-t border-[#E8DFDA]">
+            <div className="text-[11px] text-[#6E6265] mb-1 flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-[#C84B53]" />
+              Transit Corridor:
             </div>
-            <p className="text-xs text-[#F3F6FC] font-medium leading-relaxed">
+            <p className="text-xs text-[#1F1A1C] font-semibold leading-relaxed">
               {incident.location.label}
             </p>
             {incident.location.landmark && (
-              <p className="text-[11px] text-[#71809A] mt-0.5">
+              <p className="text-[11px] text-[#6E6265] mt-0.5">
                 {incident.location.landmark}
               </p>
             )}
           </div>
         </div>
-      </div>
-
-      <div className="mt-4 pt-3 border-t border-[#29364F] text-[11px] text-[#71809A] flex items-center justify-between">
-        <span>Capability Access:</span>
-        <span className="font-mono text-[#6EA8FE] truncate max-w-[140px]" title={incident.accessToken}>
-          {incident.accessToken.slice(0, 16)}...
-        </span>
       </div>
     </div>
   );

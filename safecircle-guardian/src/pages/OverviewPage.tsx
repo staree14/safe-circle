@@ -2,41 +2,40 @@ import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert,
   Clock,
-  Film,
   Battery,
   ShieldCheck,
   CheckCircle2,
+  Lock,
+  Check
 } from 'lucide-react';
 import { useGuardian } from '../context/GuardianContext';
-import { IncidentHeader } from '../components/overview/IncidentHeader';
-import { IncidentActions } from '../components/overview/IncidentActions';
-import { VictimInfoCard } from '../components/overview/VictimInfoCard';
-import { GuardianResponseCard } from '../components/overview/GuardianResponseCard';
 import { LocationMap } from '../components/overview/LocationMap';
-import { MetricCard } from '../components/common/MetricCard';
-import { EvidenceList } from '../components/evidence/EvidenceList';
+import { AudioWaveformCard } from '../components/evidence/AudioWaveformCard';
+import { DigitalReportView } from '../components/overview/DigitalReportView';
 import { IncidentTimeline } from '../components/timeline/IncidentTimeline';
+import { VaultPreviewCard } from '../components/overview/VaultPreviewCard';
+import { formatIncidentId } from '../utils/formatters';
 
 export const OverviewPage: React.FC = () => {
-  const { activeIncident, getIncidentEvidence, getIncidentTimeline } = useGuardian();
+  const {
+    activeIncident,
+    activeIncidentId,
+    getIncidentTimeline,
+    acknowledgeIncident,
+    resolveIncident,
+    guardian,
+  } = useGuardian();
 
   // Elapsed time ticker since SOS
-  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(27);
 
   useEffect(() => {
     if (!activeIncident) return;
-    const sosTime = new Date(activeIncident.createdAt).getTime();
-
-    const updateTimer = () => {
-      const now = Date.now();
-      const diffSec = Math.max(0, Math.floor((now - sosTime) / 1000));
-      setElapsedSeconds(diffSec);
-    };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
+    const interval = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
     return () => clearInterval(interval);
-  }, [activeIncident?.createdAt]);
+  }, [activeIncident?.id]);
 
   const formatElapsed = (totalSec: number) => {
     const mins = Math.floor(totalSec / 60);
@@ -46,103 +45,140 @@ export const OverviewPage: React.FC = () => {
 
   if (!activeIncident) {
     return (
-      <div className="py-20 text-center text-[#71809A]">
+      <div className="py-20 text-center text-[#6E6265]">
         No active incident selected.
       </div>
     );
   }
 
-  const incidentEvidence = getIncidentEvidence(activeIncident.id);
   const incidentTimeline = getIncidentTimeline(activeIncident.id);
-
+  const isPhysical = activeIncident.id.includes('0142') || activeIncident.type === 'PHYSICAL_SOS';
   const isActive = activeIncident.status === 'ACTIVE';
   const isAck = activeIncident.status === 'ACKNOWLEDGED';
+  const isResolved = activeIncident.status === 'RESOLVED';
+
+  const handleAcknowledge = () => {
+    acknowledgeIncident(activeIncident.id, `${guardian.displayName} (Sister)`);
+  };
+
+  const handleResolve = () => {
+    resolveIncident(activeIncident.id, `Resolved by ${guardian.displayName}. Victim safe.`);
+  };
 
   return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      {/* 1. Incident Header */}
-      <IncidentHeader incident={activeIncident} />
+    <div className="space-y-4 pb-8 animate-in fade-in duration-200">
+      {/* 1. COMPACT STATUS STRIP (Sleek Horizontal Header with Stats & Actions) */}
+      <div className="bg-[#FFFFFF] border border-[#E8DFDA] rounded-2xl px-4 py-3 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        {/* Left: Status Badge & Victim Route Title */}
+        <div className="flex items-center gap-2.5 min-w-0">
+          {isActive ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FDECEE] border border-[#F7D0D4] text-[#C84B53] text-xs font-bold uppercase tracking-wider shrink-0 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-[#C84B53] animate-ping" />
+              Active SOS
+            </span>
+          ) : isAck ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#E8F5E9] border border-[#C8E6C9] text-[#2D6A4F] text-xs font-bold uppercase tracking-wider shrink-0">
+              <span className="w-2 h-2 rounded-full bg-[#2D6A4F]" />
+              Acknowledged
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FAF6F3] border border-[#E8DFDA] text-[#6E6265] text-xs font-bold uppercase tracking-wider shrink-0">
+              Resolved
+            </span>
+          )}
 
-      {/* 2. Primary Actions Bar */}
-      <IncidentActions incident={activeIncident} />
+          <div className="truncate">
+            <span className="font-serif font-bold text-sm md:text-base text-[#1F1A1C]">
+              {isPhysical ? 'Shreya — MG Road to Malleswaram' : 'Shreya — Digital Harassment Vault'}
+            </span>
+            <span className="text-xs text-[#6E6265] ml-2 hidden sm:inline">
+              ({isPhysical ? 'Calculator 112=' : 'Cyberstalking & Threats'})
+            </span>
+          </div>
+        </div>
 
-      {/* 3. Summary Metrics Cards (Grid of 4) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Metric 1: Status */}
-        <MetricCard
-          label="Incident Status"
-          value={activeIncident.status}
-          subtext={
-            isActive
-              ? 'Priority response engaged'
-              : isAck
-              ? 'Coordination underway'
-              : 'Safely resolved'
-          }
-          icon={
-            isActive ? (
-              <ShieldAlert className="w-5 h-5 animate-pulse text-[#F0525F]" />
-            ) : isAck ? (
-              <ShieldCheck className="w-5 h-5 text-[#E8B65C]" />
-            ) : (
-              <CheckCircle2 className="w-5 h-5 text-[#38C6A3]" />
-            )
-          }
-          variant={isActive ? 'emergency' : isAck ? 'warning' : 'success'}
-        />
+        {/* Center: Sleek Telemetry Stat Pills */}
+        <div className="flex items-center gap-2 text-xs font-semibold text-[#1F1A1C] bg-[#FAF6F3] px-3 py-1.5 rounded-xl border border-[#E8DFDA] shrink-0">
+          <span className="flex items-center gap-1 tabular-nums font-mono">
+            <Clock className="w-3.5 h-3.5 text-[#C84B53]" />
+            {isPhysical ? formatElapsed(elapsedSeconds) : '20 Oct'}
+          </span>
+          <span className="text-[#E8DFDA]">•</span>
+          <span className="flex items-center gap-1 tabular-nums font-mono">
+            <Battery className="w-3.5 h-3.5 text-[#2D6A4F]" />
+            {activeIncident.batteryLevel}%
+          </span>
+          <span className="text-[#E8DFDA]">•</span>
+          <span className="flex items-center gap-1 text-[#2D6A4F] font-bold">
+            <Lock className="w-3.5 h-3.5" />
+            {isPhysical ? '2 Chunks Sealed' : '3 Exhibits Sealed'}
+          </span>
+        </div>
 
-        {/* Metric 2: Elapsed Time */}
-        <MetricCard
-          label="Time Since SOS"
-          value={formatElapsed(elapsedSeconds)}
-          subtext="Continuous live telemetry"
-          icon={<Clock className="w-5 h-5 text-[#6EA8FE]" />}
-          variant="default"
-        />
+        {/* Right: Primary Action Buttons */}
+        <div className="flex items-center gap-2 shrink-0">
+          {isAck || isResolved ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E8F5E9] border border-[#C8E6C9] text-xs font-bold text-[#2D6A4F]">
+              <Check className="w-3.5 h-3.5" />
+              <span>Acknowledged by Aditi</span>
+            </div>
+          ) : (
+            <button
+              onClick={handleAcknowledge}
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#C84B53] hover:bg-[#A8323B] text-white text-xs font-bold transition-all shadow-xs hover:shadow-sm cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Acknowledge & Respond</span>
+            </button>
+          )}
 
-        {/* Metric 3: Preserved Evidence */}
-        <MetricCard
-          label="Preserved Evidence"
-          value={`${incidentEvidence.length} Chunks`}
-          subtext="SHA-256 sealed in vault"
-          icon={<Film className="w-5 h-5 text-[#38C6A3]" />}
-          variant="success"
-        />
-
-        {/* Metric 4: Battery Level */}
-        <MetricCard
-          label="Device Battery"
-          value={`${activeIncident.batteryLevel}%`}
-          subtext="Power-save stealth active"
-          icon={<Battery className="w-5 h-5 text-[#E8B65C]" />}
-          variant={activeIncident.batteryLevel < 25 ? 'emergency' : 'default'}
-        />
+          <button
+            onClick={handleResolve}
+            disabled={isResolved}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+              isResolved
+                ? 'bg-[#FAF6F3] text-[#6E6265] border border-[#E8DFDA] cursor-default'
+                : 'bg-[#FFFFFF] hover:bg-[#FAF6F3] text-[#1F1A1C] border border-[#E8DFDA] cursor-pointer'
+            }`}
+          >
+            {isResolved ? 'Resolved' : 'Resolve'}
+          </button>
+        </div>
       </div>
 
-      {/* 4. Two-Column Metadata Row (Victim Profile & Guardian Response) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <VictimInfoCard
-          incident={activeIncident}
-          evidenceCount={incidentEvidence.length}
-        />
-        <GuardianResponseCard incident={activeIncident} />
-      </div>
+      {/* 2. MAIN 2-COLUMN WORKSPACE (ABOVE THE FOLD) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+        {/* LEFT COLUMN (60% / col-span-7) */}
+        <div className="lg:col-span-7 space-y-4">
+          {isPhysical ? (
+            <>
+              {/* Working Map with Free OSM Tiles & 420px height */}
+              <LocationMap
+                location={activeIncident.location}
+                victimName={activeIncident.victimDisplayName}
+                lastUpdated={activeIncident.updatedAt}
+              />
 
-      {/* 5. Live Interactive Location Map */}
-      <LocationMap
-        location={activeIncident.location}
-        victimName={activeIncident.victimDisplayName}
-        lastUpdated={activeIncident.updatedAt}
-      />
+              {/* Compact Audio Player Strip directly underneath */}
+              <AudioWaveformCard
+                filename="ambient_cab_audio_01.webm"
+                duration="0:14"
+                sha256="8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4"
+              />
+            </>
+          ) : (
+            <DigitalReportView />
+          )}
+        </div>
 
-      {/* 6. Evidence Stream & Chronological Timeline Split */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <EvidenceList
-          evidenceList={incidentEvidence}
-          incidentId={activeIncident.id}
-          showSimulateButton={activeIncident.status !== 'RESOLVED'}
-        />
-        <IncidentTimeline events={incidentTimeline} />
+        {/* RIGHT COLUMN (40% / col-span-5) */}
+        <div className="lg:col-span-5 space-y-4">
+          {/* Scannable Clean Incident Timeline */}
+          <IncidentTimeline events={incidentTimeline} />
+
+          {/* Quick Preview Card of Vault Evidence */}
+          <VaultPreviewCard />
+        </div>
       </div>
     </div>
   );

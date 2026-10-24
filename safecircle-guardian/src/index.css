@@ -1,35 +1,34 @@
 @import "tailwindcss";
 
 @theme {
-  --color-app-bg: #0B1020;
-  --color-sidebar-bg: #0E1426;
-  --color-panel-bg: #111A2E;
-  --color-card-bg: #151F35;
-  --color-surface: #1B2740;
-  --color-border-main: #29364F;
-  --color-border-subtle: #1E293F;
+  --color-warm-bg: #FAF6F3;
+  --color-warm-surface: #FFFFFF;
+  --color-warm-card: #FFFFFF;
+  --color-warm-border: #E8DFDA;
+  --color-warm-border-subtle: #F3ECE8;
+  --color-warm-subtle: #F6EFEA;
 
-  --color-text-primary: #F3F6FC;
-  --color-text-secondary: #A0AEC4;
-  --color-text-muted: #71809A;
+  --color-text-charcoal: #1F1A1C;
+  --color-text-slate: #6E6265;
+  --color-text-light: #9B8E92;
 
-  --color-emergency: #F0525F;
-  --color-emergency-bg: #351C2A;
-  --color-emergency-border: #5A2333;
-  --color-acknowledged: #E8B65C;
-  --color-acknowledged-bg: #382B1B;
-  --color-resolved: #38C6A3;
-  --color-resolved-bg: #13332B;
-  --color-info: #6EA8FE;
-  --color-info-bg: #192742;
-  --color-secondary-violet: #A99AFB;
+  --color-rose-primary: #C84B53;
+  --color-rose-deep: #A8323B;
+  --color-rose-blush: #FDECEE;
+  --color-rose-border: #F7D0D4;
 
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --color-sage-primary: #2D6A4F;
+  --color-sage-deep: #1B4332;
+  --color-sage-bg: #E8F5E9;
+  --color-sage-border: #C8E6C9;
+
+  --font-serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -38,26 +37,26 @@
 
 body {
   margin: 0;
-  background-color: #0B1020;
-  color: #F3F6FC;
+  background-color: #FAF6F3;
+  color: #1F1A1C;
   font-family: var(--font-sans);
   min-height: 100vh;
 }
 
-/* Custom scrollbar for command center */
+/* Custom warm scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0E1426;
+  background: #FAF6F3;
 }
 ::-webkit-scrollbar-thumb {
-  background: #29364F;
-  border-radius: 3px;
+  background: #D9CFC9;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3B4D6E;
+  background: #B8ABA4;
 }
 
 /* Tabular numerals for timestamps & statistics */
@@ -65,19 +64,19 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Pulsing radar effect */
+/* Pulsing radar effect matching Mobile App SOS Alert */
 @keyframes radar-pulse {
   0% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(240, 82, 95, 0.7);
+    box-shadow: 0 0 0 0 rgba(200, 75, 83, 0.65);
   }
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 10px rgba(240, 82, 95, 0);
+    box-shadow: 0 0 0 14px rgba(200, 75, 83, 0);
   }
   100% {
     transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(240, 82, 95, 0);
+    box-shadow: 0 0 0 0 rgba(200, 75, 83, 0);
   }
 }
 
@@ -91,28 +90,24 @@ body {
   }
 }
 
-/* Custom Leaflet Map styling for command center dark mode */
+/* Leaflet Map clean warm styling */
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background: #0E1426 !important;
-  font-family: inherit;
-}
-
-.dark-map-tiles {
-  filter: brightness(0.75) invert(1) contrast(3) hue-rotate(200deg) saturate(0.35);
+  background: #F4EFEB !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
 
 .leaflet-popup-content-wrapper {
-  background: #151F35 !important;
-  color: #F3F6FC !important;
-  border: 1px solid #29364F !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+  background: #FFFFFF !important;
+  color: #1F1A1C !important;
+  border: 1px solid #E8DFDA !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(31, 26, 28, 0.12), 0 8px 10px -6px rgba(31, 26, 28, 0.08) !important;
 }
 
 .leaflet-popup-tip {
-  background: #151F35 !important;
+  background: #FFFFFF !important;
 }
 
 /* Print styling for court forensic reports */

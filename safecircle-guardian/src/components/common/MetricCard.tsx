@@ -15,38 +15,38 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   icon,
   variant = 'default',
 }) => {
-  let borderClass = 'border-[#29364F]';
-  let iconBgClass = 'bg-[#1B2740] text-[#6EA8FE]';
+  let borderClass = 'border-[#E8DFDA]';
+  let iconBgClass = 'bg-[#FAF6F3] text-[#6E6265] border-[#E8DFDA]';
 
   if (variant === 'emergency') {
-    borderClass = 'border-[#F0525F]/40 bg-[#1A1829]';
-    iconBgClass = 'bg-[#351C2A] text-[#F0525F]';
+    borderClass = 'border-[#F7D0D4] bg-[#FFFFFF] shadow-sm';
+    iconBgClass = 'bg-[#FDECEE] text-[#C84B53] border-[#F7D0D4]';
   } else if (variant === 'warning') {
-    borderClass = 'border-[#E8B65C]/40 bg-[#1D1E2A]';
-    iconBgClass = 'bg-[#382B1B] text-[#E8B65C]';
+    borderClass = 'border-[#FFE082] bg-[#FFFFFF] shadow-sm';
+    iconBgClass = 'bg-[#FFF3E0] text-[#D97706] border-[#FFE082]';
   } else if (variant === 'success') {
-    borderClass = 'border-[#38C6A3]/40 bg-[#14232B]';
-    iconBgClass = 'bg-[#13332B] text-[#38C6A3]';
+    borderClass = 'border-[#C8E6C9] bg-[#FFFFFF] shadow-sm';
+    iconBgClass = 'bg-[#E8F5E9] text-[#2D6A4F] border-[#C8E6C9]';
   }
 
   return (
     <div
-      className={`rounded-2xl border p-4 bg-[#151F35] flex items-center justify-between gap-3 shadow-md transition-all hover:border-[#3B4D6E] ${borderClass}`}
+      className={`rounded-2xl border p-4 bg-[#FFFFFF] flex items-center justify-between gap-3 shadow-xs transition-all hover:shadow-md ${borderClass}`}
     >
       <div className="space-y-1">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-[#71809A]">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#6E6265]">
           {label}
         </span>
-        <div className="text-xl font-bold tracking-tight text-[#F3F6FC] tabular-nums">
+        <div className="text-xl font-bold tracking-tight text-[#1F1A1C] tabular-nums">
           {value}
         </div>
         {subtext && (
-          <p className="text-xs text-[#A0AEC4] tabular-nums flex items-center gap-1.5">
+          <p className="text-xs text-[#6E6265] tabular-nums flex items-center gap-1.5 font-medium">
             {subtext}
           </p>
         )}
       </div>
-      <div className={`p-3 rounded-xl border border-[#29364F] shrink-0 ${iconBgClass}`}>
+      <div className={`p-2.5 rounded-xl border shrink-0 ${iconBgClass}`}>
         {icon}
       </div>
     </div>
