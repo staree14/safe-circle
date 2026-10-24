@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ChevronLeft,
@@ -20,6 +20,7 @@ import { VictimTelemetryStrip } from '../components/overview/VictimTelemetryStri
 import { DigitalReportView } from '../components/overview/DigitalReportView';
 import { IncidentTimeline } from '../components/timeline/IncidentTimeline';
 import { MetricCard } from '../components/common/MetricCard';
+import { formatIncidentId } from '../utils/formatters';
 
 export const IncidentDetailPage: React.FC = () => {
   const { incidentId, token } = useParams<{ incidentId?: string; token?: string }>();
@@ -42,7 +43,7 @@ export const IncidentDetailPage: React.FC = () => {
           Incident Not Found
         </h3>
         <p className="text-xs text-[#6E6265] leading-relaxed">
-          The requested incident identifier <code className="font-mono text-[#C84B53] font-bold">{incidentId || token}</code> was not found in the current dataset.
+          The requested incident identifier <code className="font-mono text-[#C84B53] font-bold">{formatIncidentId(incidentId || token || '')}</code> was not found in the current dataset.
         </p>
         <button
           onClick={() => navigate('/incidents')}

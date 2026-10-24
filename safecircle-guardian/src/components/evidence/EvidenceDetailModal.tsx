@@ -11,9 +11,7 @@ import {
   Play,
   Pause,
   ChevronLeft,
-  ChevronRight,
-  Clock,
-  Lock
+  ChevronRight
 } from 'lucide-react';
 import type { Evidence } from '../../types';
 import { StatusBadge } from '../common/StatusBadge';

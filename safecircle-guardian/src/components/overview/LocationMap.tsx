@@ -4,7 +4,6 @@ import {
   MapPin,
   ExternalLink,
   RotateCcw,
-  ShieldCheck,
   Compass
 } from 'lucide-react';
 import type { LocationCoordinates } from '../../types';
@@ -56,7 +55,7 @@ const SAFE_SPOTS = [
 export const LocationMap: React.FC<LocationMapProps> = ({
   location,
   victimName,
-  lastUpdated,
+  lastUpdated: _lastUpdated,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);

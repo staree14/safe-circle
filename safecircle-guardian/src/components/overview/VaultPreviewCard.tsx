@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FolderLock, MessageSquare, UserX, ShieldCheck, ChevronRight } from 'lucide-react';
+import { FolderLock, MessageSquare, UserX, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { ChatEvidenceModal } from '../evidence/ChatEvidenceModal';
 

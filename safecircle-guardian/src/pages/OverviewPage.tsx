@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ShieldAlert,
   Clock,
   Battery,
   ShieldCheck,
-  CheckCircle2,
   Lock,
   Check
 } from 'lucide-react';
@@ -14,12 +12,10 @@ import { AudioWaveformCard } from '../components/evidence/AudioWaveformCard';
 import { DigitalReportView } from '../components/overview/DigitalReportView';
 import { IncidentTimeline } from '../components/timeline/IncidentTimeline';
 import { VaultPreviewCard } from '../components/overview/VaultPreviewCard';
-import { formatIncidentId } from '../utils/formatters';
 
 export const OverviewPage: React.FC = () => {
   const {
     activeIncident,
-    activeIncidentId,
     getIncidentTimeline,
     acknowledgeIncident,
     resolveIncident,
@@ -90,9 +86,6 @@ export const OverviewPage: React.FC = () => {
           <div className="truncate">
             <span className="font-serif font-bold text-sm md:text-base text-[#1F1A1C]">
               {isPhysical ? 'Shreya — MG Road to Malleswaram' : 'Shreya — Digital Harassment Vault'}
-            </span>
-            <span className="text-xs text-[#6E6265] ml-2 hidden sm:inline">
-              ({isPhysical ? 'Calculator 112=' : 'Cyberstalking & Threats'})
             </span>
           </div>
         </div>

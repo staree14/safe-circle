@@ -5,7 +5,6 @@ import {
   Bell,
   Search,
   Check,
-  Radio,
   FolderOpen
 } from 'lucide-react';
 import { useGuardian } from '../../context/GuardianContext';
@@ -136,7 +135,7 @@ export const Topbar: React.FC<TopbarProps> = ({
       {/* Right Controls: Notifications & Guardian Chip */}
       <div className="flex items-center gap-2 sm:gap-3">
         {/* Search Field */}
-        <div className="relative hidden xl:block w-44" ref={searchRef}>
+        <div className="relative hidden xl:block w-48" ref={searchRef}>
           <Search className="w-3.5 h-3.5 text-[#6E6265] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
@@ -145,9 +144,29 @@ export const Topbar: React.FC<TopbarProps> = ({
               setSearchQuery(e.target.value);
               setShowSearchResults(true);
             }}
+            onFocus={() => setShowSearchResults(true)}
             placeholder="Search report..."
             className="w-full bg-[#FAF6F3] border border-[#E8DFDA] rounded-xl pl-8 pr-3 py-1.5 text-xs text-[#1F1A1C] placeholder-[#6E6265] focus:outline-none focus:border-[#C84B53] transition-colors"
           />
+          {showSearchResults && filteredIncidents.length > 0 && (
+            <div className="absolute left-0 right-0 mt-1 bg-[#FFFFFF] border border-[#E8DFDA] rounded-xl shadow-lg overflow-hidden z-50">
+              {filteredIncidents.map((inc) => (
+                <button
+                  key={inc.id}
+                  onClick={() => {
+                    setActiveIncidentId(inc.id);
+                    setSearchQuery('');
+                    setShowSearchResults(false);
+                    if (location.pathname !== '/') navigate('/');
+                  }}
+                  className="w-full text-left p-2.5 hover:bg-[#FAF6F3] text-xs border-b border-[#E8DFDA] last:border-0 flex items-center justify-between cursor-pointer"
+                >
+                  <span className="font-mono font-bold text-[#C84B53]">{formatIncidentId(inc.id)}</span>
+                  <span className="text-[#6E6265] truncate text-[11px]">{inc.victimDisplayName}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Notification Bell */}

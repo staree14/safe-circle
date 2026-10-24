@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Phone, Battery, Clock, Users, Shield, Radio, CheckCircle2 } from 'lucide-react';
+import { Battery, Clock, Users, Shield, Radio, CheckCircle2 } from 'lucide-react';
 import type { Incident } from '../../types';
 
 interface VictimTelemetryStripProps {

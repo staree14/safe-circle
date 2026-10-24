@@ -1,21 +1,11 @@
 import React, { useState } from 'react';
-import {
-  Settings,
-  Volume2,
-  VolumeX,
-  RefreshCw,
-  Check,
-  Send,
-  ShieldCheck,
-  UserCheck
-} from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useGuardian } from '../context/GuardianContext';
 
 export const SettingsPage: React.FC = () => {
-  const { guardian, resetDemoState, addToast } = useGuardian();
+  const { guardian, addToast } = useGuardian();
 
   const [soundAlerts, setSoundAlerts] = useState(true);
-  const [autoRefreshInterval, setAutoRefreshInterval] = useState('10');
   const [telegramAlerts, setTelegramAlerts] = useState(true);
 
   const handleSavePreferences = () => {

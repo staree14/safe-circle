@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, Copy, Check, MessageSquare, AlertTriangle, Clock, Lock } from 'lucide-react';
+import { X, ShieldCheck, Copy, Check, MessageSquare, Clock } from 'lucide-react';
 import { useGuardian } from '../../context/GuardianContext';
 
 interface ChatEvidenceModalProps {

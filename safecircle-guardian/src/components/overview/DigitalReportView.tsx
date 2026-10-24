@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
 import {
   AlertTriangle,
-  ShieldCheck,
   Scale,
-  Clock,
-  ExternalLink,
   MessageSquare,
   UserX,
   Send,
-  FileCheck2,
-  Lock,
   ChevronRight
 } from 'lucide-react';
 import { ChatEvidenceModal } from '../evidence/ChatEvidenceModal';

@@ -3,7 +3,6 @@ import { Film, FolderSearch } from 'lucide-react';
 import type { Evidence } from '../../types';
 import { EvidenceCard } from './EvidenceCard';
 import { EvidenceDetailModal } from './EvidenceDetailModal';
-import { useGuardian } from '../../context/GuardianContext';
 
 interface EvidenceListProps {
   evidenceList: Evidence[];
@@ -13,7 +12,7 @@ interface EvidenceListProps {
 
 export const EvidenceList: React.FC<EvidenceListProps> = ({
   evidenceList,
-  incidentId,
+  incidentId: _incidentId,
 }) => {
   const [selectedEvidence, setSelectedEvidence] = useState<Evidence | null>(null);
 

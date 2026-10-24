@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Mic, ShieldCheck, Copy, Check, Radio, Volume2 } from 'lucide-react';
+import { Play, Pause, Mic, ShieldCheck, Copy, Check } from 'lucide-react';
 import { useGuardian } from '../../context/GuardianContext';
 
 interface AudioWaveformCardProps {

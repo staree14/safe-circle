@@ -4,13 +4,12 @@ import {
   FileSpreadsheet,
   Search,
   ArrowUpDown,
-  X,
   ChevronRight,
-  ShieldAlert,
   FolderOpen
 } from 'lucide-react';
 import { useGuardian } from '../context/GuardianContext';
 import { StatusBadge } from '../components/common/StatusBadge';
+import { formatIncidentId } from '../utils/formatters';
 import type { IncidentType, IncidentStatus } from '../types';
 
 export const IncidentHistoryPage: React.FC = () => {
@@ -24,8 +23,10 @@ export const IncidentHistoryPage: React.FC = () => {
 
   const filteredIncidents = incidents
     .filter((inc) => {
+      const formattedId = formatIncidentId(inc.id);
       const matchesSearch =
         inc.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        formattedId.toLowerCase().includes(searchQuery.toLowerCase()) ||
         inc.victimDisplayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (inc.aiCategory && inc.aiCategory.toLowerCase().includes(searchQuery.toLowerCase())) ||
         inc.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -40,13 +41,6 @@ export const IncidentHistoryPage: React.FC = () => {
       const timeB = new Date(b.createdAt).getTime();
       return sortOrder === 'desc' ? timeB - timeA : timeA - timeB;
     });
-
-  const clearFilters = () => {
-    setSearchQuery('');
-    setTypeFilter('ALL');
-    setStatusFilter('ALL');
-    setSortOrder('desc');
-  };
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
@@ -154,7 +148,7 @@ export const IncidentHistoryPage: React.FC = () => {
                   className="hover:bg-[#FAF6F3] cursor-pointer transition-colors"
                 >
                   <td className="p-4 font-mono font-bold text-[#C84B53]">
-                    {inc.id}
+                    {formatIncidentId(inc.id)}
                   </td>
                   <td className="p-4 font-bold text-[#1F1A1C]">
                     {inc.victimDisplayName}

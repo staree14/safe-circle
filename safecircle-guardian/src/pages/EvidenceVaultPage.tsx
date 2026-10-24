@@ -2,23 +2,19 @@ import React, { useState } from 'react';
 import {
   FolderSearch,
   Search,
-  Film,
-  Mic,
-  Image as ImageIcon,
-  FileText,
   LayoutGrid,
   List,
   ArrowUpDown,
-  X,
   ShieldCheck
 } from 'lucide-react';
 import { useGuardian } from '../context/GuardianContext';
+import { formatIncidentId } from '../utils/formatters';
 import type { Evidence } from '../types';
 import { EvidenceCard } from '../components/evidence/EvidenceCard';
 import { EvidenceDetailModal } from '../components/evidence/EvidenceDetailModal';
 
 export const EvidenceVaultPage: React.FC = () => {
-  const { evidence, incidents, activeIncidentId } = useGuardian();
+  const { evidence, incidents } = useGuardian();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'ALL' | string>('ALL');
@@ -65,13 +61,6 @@ export const EvidenceVaultPage: React.FC = () => {
     if (selectedIndex > 0) {
       setSelectedEvidence(filteredEvidence[selectedIndex - 1]);
     }
-  };
-
-  const clearFilters = () => {
-    setSearchQuery('');
-    setTypeFilter('ALL');
-    setIncidentFilter('ALL');
-    setSortOrder('desc');
   };
 
   return (
@@ -133,7 +122,7 @@ export const EvidenceVaultPage: React.FC = () => {
               <option value="ALL">All Dossiers</option>
               {incidents.map((i) => (
                 <option key={i.id} value={i.id}>
-                  {i.id} ({i.type === 'PHYSICAL_SOS' ? 'Physical SOS' : 'Digital Threat'})
+                  {formatIncidentId(i.id)} ({i.type === 'PHYSICAL_SOS' ? 'Physical SOS' : 'Digital Threat'})
                 </option>
               ))}
             </select>

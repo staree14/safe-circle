@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, CheckCircle2, FileDown, Check, AlertCircle } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, FileDown, Check } from 'lucide-react';
 import type { Incident } from '../../types';
 import { useGuardian } from '../../context/GuardianContext';
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Radio, RefreshCw, Clock, MapPin, ShieldAlert, FolderOpen } from 'lucide-react';
+import { Radio, RefreshCw, Clock } from 'lucide-react';
 import type { Incident } from '../../types';
 import { StatusBadge } from '../common/StatusBadge';
 import { useGuardian } from '../../context/GuardianContext';
@@ -10,7 +10,7 @@ interface IncidentHeaderProps {
 }
 
 export const IncidentHeader: React.FC<IncidentHeaderProps> = ({ incident }) => {
-  const { simulateLocationRefresh, activeIncidentId, setActiveIncidentId } = useGuardian();
+  const { simulateLocationRefresh } = useGuardian();
 
   const isPhysical = incident.type === 'PHYSICAL_SOS';
   const isActive = incident.status === 'ACTIVE';
