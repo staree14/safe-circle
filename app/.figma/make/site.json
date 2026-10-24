@@ -1,0 +1,11 @@
+{
+  "title": "SafeCircle: personal safety companion",
+  "description": "SafeCircle helps you travel safely, report physical or digital harassment, and keep a private evidence vault.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
