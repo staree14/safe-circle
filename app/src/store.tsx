@@ -133,6 +133,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const inc: Incident = { id, title: "SOS alert (demo)", type: "physical", category: "SOS", status: "active", at: now, pos, locationText: pos ? "Location shared from device" : "Location not captured", description: "SOS triggered from the Home screen in the prototype.", demo: true, acks,
         timeline: [{ id: uid(), at: now, kind: "sos", text: "SOS triggered by you" }, { id: uid(), at: now, kind: "alert", text: `Alert prepared for ${Object.keys(acks).length} contacts. DEMO: no message was actually sent.`, demo: true }] };
       upd((st) => ({ counter: st.counter + 1, incidents: [inc, ...st.incidents] }));
+
+      // 1. Instant cross-tab sync to Guardian Website via BroadcastChannel
+      try {
+        const ch = new BroadcastChannel("safecircle_emergency_bus");
+        ch.postMessage({
+          type: "SOS_TRIGGERED",
+          data: {
+            incident_id: id,
+            user_name: s.profile?.name || "Shreya",
+            lat: pos ? pos[0] : 12.9850,
+            lng: pos ? pos[1] : 77.5850,
+            battery_level: 34,
+            trigger_mode: "STEALTH_BLACK_SCREEN",
+            status: "ACTIVE",
+            timestamp: now,
+          },
+        });
+      } catch { /* ignore */ }
+
+      // 2. Transmit to FastAPI Backend
+      try {
+        fetch("http://localhost:8000/api/incidents/physical", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: "demo",
+            lat: pos ? pos[0] : 12.9850,
+            lng: pos ? pos[1] : 77.5850,
+            battery_level: 34,
+            trigger_mode: "STEALTH_BLACK_SCREEN",
+          }),
+        }).catch(() => {});
+      } catch { /* ignore */ }
+
       return id;
     },
     resetAll: () => { localStorage.removeItem(KEY); setP(defaults()); setEvidence(seedEvidence()); },

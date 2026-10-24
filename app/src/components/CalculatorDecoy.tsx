@@ -13,11 +13,19 @@ export function CalculatorDecoy({ onUnlock, pin = "112" }: Props) {
   const [showHint, setShowHint] = useState(true);
 
   const handleDigit = (d: string) => {
+    let next: string;
     if (display === "0" || fresh) {
+      next = d;
       setDisplay(d);
       setFresh(false);
     } else {
-      if (display.length < 9) setDisplay(display + d);
+      next = display.length < 9 ? display + d : display;
+      setDisplay(next);
+    }
+
+    // Auto-unlock when PIN "112" is typed
+    if (next === "112" || next === pin) {
+      setTimeout(() => triggerUnlock(), 250);
     }
   };
 

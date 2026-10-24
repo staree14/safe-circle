@@ -221,10 +221,166 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return () => clearInterval(interval);
   }, [syncWithBackend]);
 
-  // Real-Time WebSocket Connection to FastAPI Backend
+  // Real-Time WebSocket & BroadcastChannel Event Processor
   useEffect(() => {
     let reconnectTimer: number;
 
+    const processEvent = (type: string, data: any) => {
+      if (type === 'SOS_TRIGGERED') {
+        const nowIso = data.timestamp || new Date().toISOString();
+        const newInc: Incident = {
+          id: data.incident_id,
+          type: 'PHYSICAL_SOS',
+          victimDisplayName: data.user_name || 'Shreya',
+          victimPhone: '+91 98765 43210',
+          status: 'ACTIVE',
+          createdAt: nowIso,
+          updatedAt: nowIso,
+          location: {
+            lat: data.lat || 12.9850,
+            lng: data.lng || 77.5850,
+            label: 'Live Emergency Location',
+            landmark: 'Palace Road, Bengaluru',
+          },
+          batteryLevel: data.battery_level || 34,
+          triggerMode: data.trigger_mode || 'STEALTH_BLACK_SCREEN',
+          description: 'Physical Emergency SOS Broadcasted',
+          aiSeverity: 'CRITICAL',
+          evidenceIds: [],
+          timelineEventIds: [],
+          accessToken: data.access_token || 'demo-access-token',
+        };
+
+        setIncidents((prev) => [newInc, ...prev.filter((i) => i.id !== newInc.id)]);
+        setActiveIncidentId(newInc.id);
+
+        // Trigger attention-grabbing emergency alarm & push notification
+        triggerEmergencyAlarm();
+        alertService.fireNotification(
+          '🚨 SAFE-CIRCLE EMERGENCY ALERT',
+          `${newInc.victimDisplayName} triggered Physical SOS! Live audio & GPS streaming.`
+        );
+
+        addToast({
+          title: '🚨 CRITICAL: Physical SOS Triggered',
+          message: `${newInc.victimDisplayName} activated stealth SOS! Live stream connecting...`,
+          type: 'emergency',
+        });
+      } else if (type === 'TELEMETRY_UPDATED') {
+        setIncidents((prev) =>
+          prev.map((inc) => {
+            if (inc.id === data.incident_id) {
+              return {
+                ...inc,
+                location: {
+                  ...inc.location,
+                  lat: data.current_lat ?? inc.location.lat,
+                  lng: data.current_lng ?? inc.location.lng,
+                },
+                batteryLevel: data.battery_level ?? inc.batteryLevel,
+                updatedAt: data.timestamp || new Date().toISOString(),
+              };
+            }
+            return inc;
+          })
+        );
+        alertService.playPingSound();
+      } else if (type === 'EVIDENCE_UPLOADED') {
+        const newEv: Evidence = {
+          id: data.evidence_id || `ev-${Date.now()}`,
+          incidentId: data.incident_id,
+          filename: data.file_url ? data.file_url.split('/').pop() || 'chunk.webm' : 'chunk.webm',
+          type: data.evidence_type || 'STEALTH_VIDEO_CHUNK',
+          timestamp: data.timestamp || new Date().toISOString(),
+          sizeBytes: data.file_size || 428000,
+          sha256Hash: data.sha256_hash || '8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4',
+          hashStatus: 'VERIFICATION_PASSED',
+          chunkIndex: data.chunk_index || 0,
+          isSimulated: false,
+          legalRelevance: 'Live stealth media chunk verified with SHA-256 seal.',
+          previewAsset: {
+            url: data.file_url ? (data.file_url.startsWith('http') ? data.file_url : `http://localhost:8000${data.file_url}`) : undefined,
+            type: data.evidence_type?.includes('AUDIO') ? 'audio' : 'video',
+            durationSeconds: 4,
+            mockResolution: '1080x1920 · 30fps H.264',
+          },
+        };
+
+        setEvidence((prev) => [newEv, ...prev]);
+        alertService.playPingSound();
+        addToast({
+          title: 'New Evidence Preserved',
+          message: `Evidence file received with SHA-256 seal.`,
+          type: 'info',
+        });
+      } else if (type === 'GUARDIAN_COORDINATION_UPDATE') {
+        setGuardianCoordination((prev) => {
+          const existing = prev.find((c) => c.guardianName.includes(data.guardian_name.split(' ')[0]));
+          if (existing) {
+            return prev.map((c) =>
+              c.id === existing.id
+                ? {
+                    ...c,
+                    statusAction: data.status_action,
+                    statusLabel: data.status_label,
+                    note: data.note,
+                    timestamp: 'Just now',
+                  }
+                : c
+            );
+          } else {
+            return [
+              {
+                id: `coord-${Date.now()}`,
+                guardianName: data.guardian_name,
+                role: 'Trusted Responder',
+                statusAction: data.status_action,
+                statusLabel: data.status_label,
+                note: data.note,
+                timestamp: 'Just now',
+              },
+              ...prev,
+            ];
+          }
+        });
+
+        addToast({
+          title: 'Circle Status Update',
+          message: `${data.guardian_name}: ${data.status_label}`,
+          type: 'info',
+        });
+      } else if (type === 'GUARDIAN_ACKNOWLEDGED') {
+        setIncidents((prev) =>
+          prev.map((inc) =>
+            inc.id === data.incident_id
+              ? { ...inc, status: 'ACKNOWLEDGED', acknowledgedBy: data.acknowledged_by }
+              : inc
+          )
+        );
+      } else if (type === 'INCIDENT_RESOLVED') {
+        setIncidents((prev) =>
+          prev.map((inc) =>
+            inc.id === data.incident_id ? { ...inc, status: 'RESOLVED' } : inc
+          )
+        );
+        stopEmergencyAlarm();
+      }
+    };
+
+    // 1. Cross-tab Zero-Latency BroadcastChannel listener
+    let broadcastChannel: BroadcastChannel | null = null;
+    try {
+      broadcastChannel = new BroadcastChannel('safecircle_emergency_bus');
+      broadcastChannel.onmessage = (event) => {
+        if (event.data?.type) {
+          processEvent(event.data.type, event.data.data);
+        }
+      };
+    } catch {
+      // BroadcastChannel unsupported fallback
+    }
+
+    // 2. WebSocket listener for network/backend synchronization
     const connectWebSocket = () => {
       try {
         const ws = new WebSocket('ws://localhost:8000/ws/incidents');
@@ -239,146 +395,7 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           try {
             const payload = JSON.parse(event.data);
             const { type, data } = payload;
-
-            if (type === 'SOS_TRIGGERED') {
-              const nowIso = data.timestamp || new Date().toISOString();
-              const newInc: Incident = {
-                id: data.incident_id,
-                type: 'PHYSICAL_SOS',
-                victimDisplayName: data.user_name || 'Shreya',
-                victimPhone: '+91 98765 43210',
-                status: 'ACTIVE',
-                createdAt: nowIso,
-                updatedAt: nowIso,
-                location: {
-                  lat: data.lat || 12.9850,
-                  lng: data.lng || 77.5850,
-                  label: 'Live Emergency Location',
-                  landmark: 'Palace Road, Bengaluru',
-                },
-                batteryLevel: data.battery_level || 34,
-                triggerMode: data.trigger_mode || 'STEALTH_BLACK_SCREEN',
-                description: 'Physical Emergency SOS Broadcasted',
-                aiSeverity: 'CRITICAL',
-                evidenceIds: [],
-                timelineEventIds: [],
-                accessToken: data.access_token || '',
-              };
-
-              setIncidents((prev) => [newInc, ...prev.filter((i) => i.id !== newInc.id)]);
-              setActiveIncidentId(newInc.id);
-
-              // Trigger attention-grabbing emergency alarm & push notification
-              triggerEmergencyAlarm();
-              alertService.fireNotification(
-                '🚨 SAFE-CIRCLE EMERGENCY ALERT',
-                `${newInc.victimDisplayName} triggered Physical SOS! Live audio & GPS streaming.`
-              );
-
-              addToast({
-                title: '🚨 CRITICAL: Physical SOS Triggered',
-                message: `${newInc.victimDisplayName} activated stealth SOS! Live stream connecting...`,
-                type: 'emergency',
-              });
-            } else if (type === 'TELEMETRY_UPDATED') {
-              setIncidents((prev) =>
-                prev.map((inc) => {
-                  if (inc.id === data.incident_id) {
-                    return {
-                      ...inc,
-                      location: {
-                        ...inc.location,
-                        lat: data.current_lat ?? inc.location.lat,
-                        lng: data.current_lng ?? inc.location.lng,
-                      },
-                      batteryLevel: data.battery_level ?? inc.batteryLevel,
-                      updatedAt: data.timestamp || new Date().toISOString(),
-                    };
-                  }
-                  return inc;
-                })
-              );
-              alertService.playPingSound();
-            } else if (type === 'EVIDENCE_UPLOADED') {
-              const newEv: Evidence = {
-                id: data.evidence_id || `ev-${Date.now()}`,
-                incidentId: data.incident_id,
-                filename: data.file_url ? data.file_url.split('/').pop() || 'chunk.webm' : 'chunk.webm',
-                type: data.evidence_type || 'STEALTH_VIDEO_CHUNK',
-                timestamp: data.timestamp || new Date().toISOString(),
-                sizeBytes: data.file_size || 428000,
-                sha256Hash: data.sha256_hash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
-                hashStatus: 'VERIFICATION_PASSED',
-                chunkIndex: data.chunk_index || 0,
-                isSimulated: false,
-                legalRelevance: 'Live stealth media chunk verified with SHA-256 seal.',
-                previewAsset: {
-                  url: data.file_url ? `http://localhost:8000${data.file_url}` : undefined,
-                  type: data.evidence_type?.includes('AUDIO') ? 'audio' : 'video',
-                  durationSeconds: 4,
-                  mockResolution: '1080x1920 · 30fps H.264',
-                },
-              };
-
-              setEvidence((prev) => [newEv, ...prev]);
-              alertService.playPingSound();
-              addToast({
-                title: 'New Evidence Preserved',
-                message: `Chunk #${data.chunk_index} received with SHA-256 seal.`,
-                type: 'info',
-              });
-            } else if (type === 'GUARDIAN_COORDINATION_UPDATE') {
-              setGuardianCoordination((prev) => {
-                const existing = prev.find((c) => c.guardianName.includes(data.guardian_name.split(' ')[0]));
-                if (existing) {
-                  return prev.map((c) =>
-                    c.id === existing.id
-                      ? {
-                          ...c,
-                          statusAction: data.status_action,
-                          statusLabel: data.status_label,
-                          note: data.note,
-                          timestamp: 'Just now',
-                        }
-                      : c
-                  );
-                } else {
-                  return [
-                    {
-                      id: `coord-${Date.now()}`,
-                      guardianName: data.guardian_name,
-                      role: 'Trusted Responder',
-                      statusAction: data.status_action,
-                      statusLabel: data.status_label,
-                      note: data.note,
-                      timestamp: 'Just now',
-                    },
-                    ...prev,
-                  ];
-                }
-              });
-
-              addToast({
-                title: 'Circle Status Update',
-                message: `${data.guardian_name}: ${data.status_label}`,
-                type: 'info',
-              });
-            } else if (type === 'GUARDIAN_ACKNOWLEDGED') {
-              setIncidents((prev) =>
-                prev.map((inc) =>
-                  inc.id === data.incident_id
-                    ? { ...inc, status: 'ACKNOWLEDGED', acknowledgedBy: data.acknowledged_by }
-                    : inc
-                )
-              );
-            } else if (type === 'INCIDENT_RESOLVED') {
-              setIncidents((prev) =>
-                prev.map((inc) =>
-                  inc.id === data.incident_id ? { ...inc, status: 'RESOLVED' } : inc
-                )
-              );
-              stopEmergencyAlarm();
-            }
+            processEvent(type, data);
           } catch {
             // Ignore non-json ws frames
           }
@@ -407,6 +424,9 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       window.clearTimeout(reconnectTimer);
       if (wsRef.current) {
         wsRef.current.close();
+      }
+      if (broadcastChannel) {
+        broadcastChannel.close();
       }
     };
   }, []);

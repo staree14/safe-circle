@@ -84,6 +84,25 @@ export default function Capture() {
     const e = await fileToEvidence(clip.blob, nm, { duration: secs || undefined, sync: "pending", incidentId: undefined });
     const id = addEvidence({ ...e, incidentId: incident || undefined });
     if (incident) addTimeline(incident, { kind: "evidence", text: `${kindOf(clip.blob) === "video" ? "Video" : kindOf(clip.blob) === "audio" ? "Audio" : "Image"} added: ${nm}` });
+    
+    // Broadcast to Guardian Website Command Center
+    try {
+      const ch = new BroadcastChannel("safecircle_emergency_bus");
+      ch.postMessage({
+        type: "EVIDENCE_UPLOADED",
+        data: {
+          incident_id: incident || "SC-2026-0142",
+          evidence_id: id,
+          file_url: nm,
+          evidence_type: kindOf(clip.blob) === "video" ? "STEALTH_VIDEO_CHUNK" : "STEALTH_AUDIO_CHUNK",
+          sha256_hash: e.hash?.value || "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4",
+          file_size: clip.blob.size,
+          chunk_index: 2,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch { /* ignore */ }
+
     setSavedId(id); toast("Saved on this device"); setStep("saved");
   };
 
