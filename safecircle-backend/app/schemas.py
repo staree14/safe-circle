@@ -124,6 +124,13 @@ class AcknowledgeRequest(BaseModel):
     acknowledged_by: str = Field(..., example="Aditi (Trusted Contact)")
 
 
+class GuardianCoordinationRequest(BaseModel):
+    guardian_name: str = Field(..., example="Pooja Sharma (Circle Member)")
+    status_action: str = Field(..., example="NAVIGATING_TO_VICTIM")
+    status_label: str = Field(..., example="Navigating to Location (ETA 8 mins)")
+    note: Optional[str] = Field(None, example="En route in blue sedan, 2 km away.")
+
+
 # --- INCIDENT RESPONSE SCHEMAS ---
 
 class IncidentResponse(BaseModel):

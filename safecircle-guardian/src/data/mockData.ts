@@ -5,6 +5,7 @@ import type {
   Guardian,
   LegalReference,
   NotificationItem,
+  GuardianCoordinationStatus,
 } from '../types';
 
 export const CURRENT_GUARDIAN: Guardian = {
@@ -16,6 +17,49 @@ export const CURRENT_GUARDIAN: Guardian = {
   avatarInitials: 'AS',
   isPrimarySos: true,
 };
+
+export const INITIAL_GUARDIAN_COORDINATION: GuardianCoordinationStatus[] = [
+  {
+    id: 'coord-1',
+    guardianName: 'Aditi Sharma',
+    role: 'Sister (Primary Contact)',
+    statusAction: 'NAVIGATING_TO_VICTIM',
+    statusLabel: 'Navigating to Location (ETA 6 mins)',
+    note: 'In cab heading north from Palace Road junction.',
+    timestamp: '2 mins ago',
+    isCurrentUser: true,
+  },
+  {
+    id: 'coord-2',
+    guardianName: 'Pooja Sharma',
+    role: 'Circle Member',
+    statusAction: 'CALLED_112',
+    statusLabel: 'Called 112 Police Control Room',
+    note: 'Spoke with Dispatcher Rao; PCR Van #14 alerted for MG Road sector.',
+    timestamp: '4 mins ago',
+    isCurrentUser: false,
+  },
+  {
+    id: 'coord-3',
+    guardianName: 'Rohan Mehta',
+    role: 'Circle Member',
+    statusAction: 'MONITORING_STREAM',
+    statusLabel: 'Monitoring Live Stealth Audio & GPS',
+    note: 'Recording chunk transcripts and watching battery drift.',
+    timestamp: '5 mins ago',
+    isCurrentUser: false,
+  },
+  {
+    id: 'coord-4',
+    guardianName: 'Kavita S',
+    role: 'Circle Member',
+    statusAction: 'MONITORING_STREAM',
+    statusLabel: 'Notified via Telegram Alert',
+    note: 'Alert received on standby.',
+    timestamp: '6 mins ago',
+    isCurrentUser: false,
+  },
+];
 
 export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {

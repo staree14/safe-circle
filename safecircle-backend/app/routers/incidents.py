@@ -8,6 +8,7 @@ from app.database import get_db
 from app.config import settings
 from app import models, schemas
 from app.services import crypto_vault, telegram_bot, ai_triage, report_gen
+from app.services.websocket_manager import ws_manager
 
 router = APIRouter(prefix="/api/incidents", tags=["Incidents & SOS Workflows"])
 
@@ -110,6 +111,24 @@ async def trigger_physical_sos(
     )
     db.add(telegram_event)
 
+    # Broadcast live SOS alert to all connected Guardians via WebSocket
+    background_tasks.add_task(
+        ws_manager.broadcast,
+        "SOS_TRIGGERED",
+        {
+            "incident_id": incident.id,
+            "access_token": access_token,
+            "lat": payload.lat,
+            "lng": payload.lng,
+            "battery_level": payload.battery_level,
+            "trigger_mode": incident.trigger_mode,
+            "status": incident.status,
+            "user_name": user.name,
+            "timestamp": incident.created_at.isoformat()
+        },
+        incident.id
+    )
+
     db.commit()
     db.refresh(incident)
     return incident
@@ -119,6 +138,7 @@ async def trigger_physical_sos(
 def update_telemetry(
     incident_id: str,
     payload: schemas.TelemetryUpdate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
     """
@@ -148,6 +168,21 @@ def update_telemetry(
         }
     )
     db.add(te)
+
+    # Real-time WebSocket broadcast to Guardian radar maps
+    background_tasks.add_task(
+        ws_manager.broadcast,
+        "TELEMETRY_UPDATED",
+        {
+            "incident_id": incident.id,
+            "current_lat": incident.current_lat,
+            "current_lng": incident.current_lng,
+            "battery_level": incident.battery_level,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        },
+        incident.id
+    )
+
     db.commit()
     db.refresh(incident)
     return incident
@@ -497,13 +532,30 @@ async def acknowledge_incident(
         guardian_url=guardian_url
     )
 
+    # Real-time WebSocket broadcast to all Guardians
+    background_tasks.add_task(
+        ws_manager.broadcast,
+        "GUARDIAN_ACKNOWLEDGED",
+        {
+            "incident_id": incident.id,
+            "status": incident.status,
+            "acknowledged_by": payload.acknowledged_by,
+            "acknowledged_at": incident.acknowledged_at.isoformat()
+        },
+        incident.id
+    )
+
     db.commit()
     db.refresh(incident)
     return incident
 
 
 @router.post("/{incident_id}/resolve", response_model=schemas.IncidentResponse, summary="Mark incident as resolved")
-def resolve_incident(incident_id: str, db: Session = Depends(get_db)):
+def resolve_incident(
+    incident_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
     """
     Resolves the incident, marking the victim safe and sealing evidence streaming.
     """
@@ -523,9 +575,82 @@ def resolve_incident(incident_id: str, db: Session = Depends(get_db)):
         metadata_json={"resolved_at": incident.resolved_at.isoformat()}
     )
     db.add(res_event)
+
+    # Real-time WebSocket broadcast of resolution
+    background_tasks.add_task(
+        ws_manager.broadcast,
+        "INCIDENT_RESOLVED",
+        {
+            "incident_id": incident.id,
+            "status": incident.status,
+            "resolved_at": incident.resolved_at.isoformat()
+        },
+        incident.id
+    )
+
     db.commit()
     db.refresh(incident)
     return incident
+
+
+@router.post("/{incident_id}/coordination", summary="Broadcast Multi-Guardian Response Coordination Update")
+async def update_guardian_coordination(
+    incident_id: str,
+    payload: schemas.GuardianCoordinationRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """
+    Allows circle guardians (Sister, Mom, Friend, etc.) to publish their live response status:
+    - NAVIGATING_TO_VICTIM (e.g. 'Sister Priya is navigating to location')
+    - CALLED_112 (e.g. 'Pooja called 112 Police Control Room')
+    - AT_SCENE (e.g. 'At scene with victim')
+    - CONFIRMED_SAFE
+    Logs to timeline and broadcasts to all guardians via WebSocket.
+    """
+    incident = db.query(models.Incident).filter(models.Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    coordination_event = models.TimelineEvent(
+        id=str(uuid.uuid4()),
+        incident_id=incident.id,
+        event_type="GUARDIAN_COORDINATION",
+        title=f"Guardian Action: {payload.guardian_name}",
+        description=f"{payload.guardian_name} updated status: {payload.status_label}. {payload.note or ''}".strip(),
+        metadata_json={
+            "guardian_name": payload.guardian_name,
+            "status_action": payload.status_action,
+            "status_label": payload.status_label,
+            "note": payload.note
+        }
+    )
+    db.add(coordination_event)
+    db.commit()
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    # Broadcast to all connected Guardian consoles
+    background_tasks.add_task(
+        ws_manager.broadcast,
+        "GUARDIAN_COORDINATION_UPDATE",
+        {
+            "incident_id": incident_id,
+            "guardian_name": payload.guardian_name,
+            "status_action": payload.status_action,
+            "status_label": payload.status_label,
+            "note": payload.note,
+            "timestamp": now_iso
+        },
+        incident_id
+    )
+
+    return {
+        "status": "success",
+        "incident_id": incident_id,
+        "guardian_name": payload.guardian_name,
+        "status_label": payload.status_label,
+        "timestamp": now_iso
+    }
 
 
 @router.get("/token/{access_token}/report", summary="Generate Forensic Chain-of-Custody Incident Report")

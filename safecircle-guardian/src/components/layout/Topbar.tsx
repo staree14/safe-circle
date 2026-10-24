@@ -5,7 +5,11 @@ import {
   Bell,
   Search,
   Check,
-  FolderOpen
+  FolderOpen,
+  Volume2,
+  VolumeX,
+  Siren,
+  BellRing
 } from 'lucide-react';
 import { useGuardian } from '../../context/GuardianContext';
 import { formatIncidentId } from '../../utils/formatters';
@@ -30,6 +34,12 @@ export const Topbar: React.FC<TopbarProps> = ({
     activeIncidentId,
     setActiveIncidentId,
     incidents,
+    isWsConnected,
+    alarmEnabled,
+    setAlarmEnabled,
+    isAlarmPlaying,
+    stopEmergencyAlarm,
+    testEmergencyAlarm,
   } = useGuardian();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -168,6 +178,58 @@ export const Topbar: React.FC<TopbarProps> = ({
             </div>
           )}
         </div>
+
+        {/* WebSocket Real-Time Connection Indicator */}
+        <div
+          className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${
+            isWsConnected
+              ? 'bg-[#E8F5E9] text-[#2D6A4F] border-[#C8E6C9]'
+              : 'bg-[#FFF8E1] text-[#B78103] border-[#FFE082]'
+          }`}
+          title={isWsConnected ? 'Connected to FastAPI WebSocket feed (real-time stream)' : 'Connecting to WebSocket (polling fallback active)'}
+        >
+          <span className={`w-2 h-2 rounded-full ${isWsConnected ? 'bg-[#2D6A4F] animate-ping' : 'bg-[#B78103]'}`} />
+          <span>{isWsConnected ? 'Live WebSocket' : 'Sync Polling'}</span>
+        </div>
+
+        {/* Siren Alarm Controls */}
+        {isAlarmPlaying ? (
+          <button
+            type="button"
+            onClick={stopEmergencyAlarm}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#C84B53] text-white text-xs font-bold animate-pulse shadow-sm cursor-pointer"
+            title="Silence emergency siren"
+          >
+            <Siren className="w-3.5 h-3.5 animate-spin" />
+            <span>Mute Siren</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setAlarmEnabled(!alarmEnabled)}
+              className={`p-2 rounded-xl transition-colors border cursor-pointer ${
+                alarmEnabled
+                  ? 'text-[#C84B53] bg-[#FDECEE]/50 border-[#F7D0D4] hover:bg-[#FDECEE]'
+                  : 'text-[#6E6265] bg-[#FAF6F3] border-[#E8DFDA] hover:bg-[#F3ECE8]'
+              }`}
+              title={alarmEnabled ? 'Audible siren alarm enabled (Click to mute)' : 'Audible siren muted (Click to enable)'}
+              aria-label="Toggle alarm sound"
+            >
+              {alarmEnabled ? <Volume2 className="w-4 h-4 text-[#C84B53]" /> : <VolumeX className="w-4 h-4 text-[#6E6265]" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={testEmergencyAlarm}
+              className="hidden lg:inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#FAF6F3] hover:bg-[#F3ECE8] border border-[#E8DFDA] text-[11px] font-medium text-[#6E6265] transition-colors cursor-pointer"
+              title="Test emergency audio chime & push notification"
+            >
+              <BellRing className="w-3 h-3 text-[#C84B53]" />
+              <span>Test Alarm</span>
+            </button>
+          </div>
+        )}
 
         {/* Notification Bell */}
         <div className="relative" ref={notifRef}>

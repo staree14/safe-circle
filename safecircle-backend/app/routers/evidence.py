@@ -1,10 +1,11 @@
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app import models, schemas
 from app.services import crypto_vault
+from app.services.websocket_manager import ws_manager
 
 router = APIRouter(prefix="/api/incidents", tags=["Live Evidence Streaming"])
 
@@ -12,6 +13,7 @@ router = APIRouter(prefix="/api/incidents", tags=["Live Evidence Streaming"])
 @router.post("/{incident_id}/evidence", response_model=schemas.EvidenceResponse, status_code=status.HTTP_201_CREATED, summary="Upload Live Stealth Audio/Video Chunk or Screenshot")
 async def upload_evidence_chunk(
     incident_id: str,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(..., description="Binary media payload (e.g., 4-second webm chunk or screenshot)"),
     evidence_type: str = Form("STEALTH_VIDEO_CHUNK", description="Type: STEALTH_VIDEO_CHUNK, STEALTH_AUDIO_CHUNK, SCREENSHOT, TEXT_LOG, URL_CAPTURE"),
     chunk_index: int = Form(0, description="Sequential index of the incoming chunk"),
@@ -77,6 +79,25 @@ async def upload_evidence_chunk(
         }
     )
     db.add(timeline_entry)
+
+    # Real-time WebSocket broadcast to Guardian live stream
+    background_tasks.add_task(
+        ws_manager.broadcast,
+        "EVIDENCE_UPLOADED",
+        {
+            "incident_id": incident_id,
+            "evidence_id": evidence_rec.id,
+            "evidence_type": evidence_type,
+            "chunk_index": chunk_index,
+            "sha256_hash": sha256_hash,
+            "file_size": file_size,
+            "file_url": file_url,
+            "captured_lat": evidence_rec.captured_lat,
+            "captured_lng": evidence_rec.captured_lng,
+            "timestamp": evidence_rec.created_at.isoformat()
+        },
+        incident_id
+    )
 
     db.commit()
     db.refresh(evidence_rec)

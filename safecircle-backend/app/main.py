@@ -269,6 +269,41 @@ app.include_router(users.router)
 app.include_router(incidents.router)
 app.include_router(evidence.router)
 
+from fastapi import WebSocket, WebSocketDisconnect
+from app.services.websocket_manager import ws_manager
+
+@app.websocket("/ws/incidents")
+async def websocket_incidents_feed(websocket: WebSocket):
+    """
+    Real-time WebSocket feed for Guardian dashboards.
+    Receives instantaneous SOS triggers, GPS telemetry updates, evidence uploads,
+    and guardian response status changes without polling.
+    """
+    await ws_manager.connect(websocket)
+    try:
+        while True:
+            # Keep connection alive; clients can also send heartbeat or client messages
+            msg = await websocket.receive_text()
+            logger.debug(f"Received WS message: {msg}")
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket)
+    except Exception as exc:
+        logger.warning(f"WebSocket error: {exc}")
+        ws_manager.disconnect(websocket)
+
+@app.websocket("/ws/incidents/{incident_id}")
+async def websocket_single_incident(websocket: WebSocket, incident_id: str):
+    await ws_manager.connect(websocket, incident_id=incident_id)
+    try:
+        while True:
+            msg = await websocket.receive_text()
+            logger.debug(f"Received WS message for {incident_id}: {msg}")
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket, incident_id=incident_id)
+    except Exception as exc:
+        logger.warning(f"WebSocket error: {exc}")
+        ws_manager.disconnect(websocket, incident_id=incident_id)
+
 
 @app.get("/", tags=["System"])
 def root():

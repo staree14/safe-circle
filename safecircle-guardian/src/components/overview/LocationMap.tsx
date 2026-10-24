@@ -4,7 +4,8 @@ import {
   MapPin,
   ExternalLink,
   RotateCcw,
-  Compass
+  Compass,
+  Navigation,
 } from 'lucide-react';
 import type { LocationCoordinates } from '../../types';
 
@@ -63,6 +64,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   const [mapError, setMapError] = useState(false);
 
   const googleMapsUrl = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+  const turnByTurnUrl = `https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`;
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -207,24 +209,36 @@ export const LocationMap: React.FC<LocationMapProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleCenterMap}
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#FAF6F3] hover:bg-[#F3ECE8] border border-[#E8DFDA] text-xs font-semibold text-[#1F1A1C] transition-colors cursor-pointer"
             title="Recenter on victim"
           >
             <RotateCcw className="w-3 h-3 text-[#6E6265]" />
-            <span>Center Pin</span>
+            <span>Center</span>
           </button>
+
+          <a
+            href={turnByTurnUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#C84B53] hover:bg-[#A8323B] text-white text-xs font-bold transition-all shadow-xs hover:shadow-sm"
+            title="Open Google Maps turn-by-turn driving or walking directions to victim"
+          >
+            <Navigation className="w-3.5 h-3.5 text-white animate-pulse" />
+            <span>Navigate to Victim</span>
+          </a>
 
           <a
             href={googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#FAF6F3] hover:bg-[#F3ECE8] border border-[#E8DFDA] text-xs font-semibold text-[#C84B53] transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#FAF6F3] hover:bg-[#F3ECE8] border border-[#E8DFDA] text-xs font-semibold text-[#6E6265] transition-colors"
+            title="View standard map"
           >
             <ExternalLink className="w-3 h-3" />
-            <span>Open Maps</span>
+            <span>Full Map</span>
           </a>
         </div>
       </div>

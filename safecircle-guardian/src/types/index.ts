@@ -125,3 +125,15 @@ export interface LegalReference {
   description: string;
   applicableThreat: string;
 }
+
+export interface GuardianCoordinationStatus {
+  id: string;
+  guardianName: string;
+  role: string;
+  statusAction: 'NAVIGATING_TO_VICTIM' | 'CALLED_112' | 'AT_SCENE' | 'MONITORING_STREAM' | 'CONFIRMED_SAFE';
+  statusLabel: string;
+  note?: string;
+  timestamp: string;
+  isCurrentUser?: boolean;
+}
+

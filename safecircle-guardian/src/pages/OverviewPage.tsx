@@ -12,6 +12,8 @@ import { AudioWaveformCard } from '../components/evidence/AudioWaveformCard';
 import { DigitalReportView } from '../components/overview/DigitalReportView';
 import { IncidentTimeline } from '../components/timeline/IncidentTimeline';
 import { VaultPreviewCard } from '../components/overview/VaultPreviewCard';
+import { IncidentActions } from '../components/overview/IncidentActions';
+import { MultiGuardianCoordination } from '../components/overview/MultiGuardianCoordination';
 
 export const OverviewPage: React.FC = () => {
   const {
@@ -166,6 +168,9 @@ export const OverviewPage: React.FC = () => {
 
         {/* RIGHT COLUMN (40% / col-span-5) */}
         <div className="lg:col-span-5 space-y-4">
+          {/* Emergency Dispatch & Rapid Dialer Actions */}
+          <IncidentActions incident={activeIncident} />
+
           {/* Scannable Clean Incident Timeline */}
           <IncidentTimeline events={incidentTimeline} />
 
@@ -173,6 +178,9 @@ export const OverviewPage: React.FC = () => {
           <VaultPreviewCard />
         </div>
       </div>
+
+      {/* 3. MULTI-GUARDIAN COORDINATION (Full Width Live Circle Status Log) */}
+      <MultiGuardianCoordination />
     </div>
   );
 };

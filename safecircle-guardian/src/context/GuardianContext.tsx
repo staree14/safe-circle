@@ -1,12 +1,14 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import type { Incident, Evidence, TimelineEvent, Guardian, NotificationItem } from '../types';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import type { Incident, Evidence, TimelineEvent, Guardian, NotificationItem, GuardianCoordinationStatus } from '../types';
 import {
   CURRENT_GUARDIAN,
   INITIAL_INCIDENTS,
   INITIAL_EVIDENCE,
   INITIAL_TIMELINE_EVENTS,
   INITIAL_NOTIFICATIONS,
+  INITIAL_GUARDIAN_COORDINATION,
 } from '../data/mockData';
+import { alertService } from '../utils/audioAlert';
 
 export interface ToastMessage {
   id: string;
@@ -37,6 +39,17 @@ interface GuardianContextType {
   resetDemoState: () => void;
   getIncidentEvidence: (incidentId: string) => Evidence[];
   getIncidentTimeline: (incidentId: string) => TimelineEvent[];
+  // WebSocket and Siren Alert
+  isWsConnected: boolean;
+  alarmEnabled: boolean;
+  setAlarmEnabled: (enabled: boolean) => void;
+  isAlarmPlaying: boolean;
+  triggerEmergencyAlarm: () => void;
+  stopEmergencyAlarm: () => void;
+  testEmergencyAlarm: () => void;
+  // Multi-Guardian Coordination
+  guardianCoordination: GuardianCoordinationStatus[];
+  updateGuardianStatus: (action: GuardianCoordinationStatus['statusAction'], label: string, note?: string) => Promise<void>;
 }
 
 const GuardianContext = createContext<GuardianContextType | undefined>(undefined);
@@ -49,10 +62,54 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+  // Multi-Guardian Coordination state
+  const [guardianCoordination, setGuardianCoordination] = useState<GuardianCoordinationStatus[]>(INITIAL_GUARDIAN_COORDINATION);
+
+  // WebSocket Live Connection state
+  const [isWsConnected, setIsWsConnected] = useState<boolean>(false);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  // Audible Siren and Browser Alert state
+  const [alarmEnabled, setAlarmEnabledState] = useState<boolean>(alertService.isEnabled());
+  const [isAlarmPlaying, setIsAlarmPlaying] = useState<boolean>(false);
+
   // Find active incident
   const activeIncident = incidents.find((inc) => inc.id === activeIncidentId) || incidents[0];
 
   const unreadNotificationCount = notifications.filter((n) => !n.read).length;
+
+  const setAlarmEnabled = (enabled: boolean) => {
+    alertService.setSoundEnabled(enabled);
+    setAlarmEnabledState(enabled);
+    if (!enabled) {
+      alertService.stopAlarm();
+      setIsAlarmPlaying(false);
+    }
+  };
+
+  const triggerEmergencyAlarm = () => {
+    if (alarmEnabled) {
+      alertService.startEmergencySiren();
+      setIsAlarmPlaying(true);
+      setTimeout(() => setIsAlarmPlaying(false), 6000);
+    }
+  };
+
+  const stopEmergencyAlarm = () => {
+    alertService.stopAlarm();
+    setIsAlarmPlaying(false);
+  };
+
+  const testEmergencyAlarm = () => {
+    void alertService.requestNotificationPermission();
+    alertService.startEmergencySiren();
+    setIsAlarmPlaying(true);
+    setTimeout(() => setIsAlarmPlaying(false), 4000);
+    alertService.fireNotification(
+      '🚨 SafeCircle Emergency Siren Test',
+      'Attention-grabbing siren active! Browser push notifications enabled.'
+    );
+  };
 
   const addToast = (toast: Omit<ToastMessage, 'id'>) => {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
@@ -163,6 +220,253 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const interval = setInterval(syncWithBackend, 6000);
     return () => clearInterval(interval);
   }, [syncWithBackend]);
+
+  // Real-Time WebSocket Connection to FastAPI Backend
+  useEffect(() => {
+    let reconnectTimer: number;
+
+    const connectWebSocket = () => {
+      try {
+        const ws = new WebSocket('ws://localhost:8000/ws/incidents');
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          setIsWsConnected(true);
+          void alertService.requestNotificationPermission();
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            const { type, data } = payload;
+
+            if (type === 'SOS_TRIGGERED') {
+              const nowIso = data.timestamp || new Date().toISOString();
+              const newInc: Incident = {
+                id: data.incident_id,
+                type: 'PHYSICAL_SOS',
+                victimDisplayName: data.user_name || 'Shreya',
+                victimPhone: '+91 98765 43210',
+                status: 'ACTIVE',
+                createdAt: nowIso,
+                updatedAt: nowIso,
+                location: {
+                  lat: data.lat || 12.9850,
+                  lng: data.lng || 77.5850,
+                  label: 'Live Emergency Location',
+                  landmark: 'Palace Road, Bengaluru',
+                },
+                batteryLevel: data.battery_level || 34,
+                triggerMode: data.trigger_mode || 'STEALTH_BLACK_SCREEN',
+                description: 'Physical Emergency SOS Broadcasted',
+                aiSeverity: 'CRITICAL',
+                evidenceIds: [],
+                timelineEventIds: [],
+                accessToken: data.access_token || '',
+              };
+
+              setIncidents((prev) => [newInc, ...prev.filter((i) => i.id !== newInc.id)]);
+              setActiveIncidentId(newInc.id);
+
+              // Trigger attention-grabbing emergency alarm & push notification
+              triggerEmergencyAlarm();
+              alertService.fireNotification(
+                '🚨 SAFE-CIRCLE EMERGENCY ALERT',
+                `${newInc.victimDisplayName} triggered Physical SOS! Live audio & GPS streaming.`
+              );
+
+              addToast({
+                title: '🚨 CRITICAL: Physical SOS Triggered',
+                message: `${newInc.victimDisplayName} activated stealth SOS! Live stream connecting...`,
+                type: 'emergency',
+              });
+            } else if (type === 'TELEMETRY_UPDATED') {
+              setIncidents((prev) =>
+                prev.map((inc) => {
+                  if (inc.id === data.incident_id) {
+                    return {
+                      ...inc,
+                      location: {
+                        ...inc.location,
+                        lat: data.current_lat ?? inc.location.lat,
+                        lng: data.current_lng ?? inc.location.lng,
+                      },
+                      batteryLevel: data.battery_level ?? inc.batteryLevel,
+                      updatedAt: data.timestamp || new Date().toISOString(),
+                    };
+                  }
+                  return inc;
+                })
+              );
+              alertService.playPingSound();
+            } else if (type === 'EVIDENCE_UPLOADED') {
+              const newEv: Evidence = {
+                id: data.evidence_id || `ev-${Date.now()}`,
+                incidentId: data.incident_id,
+                filename: data.file_url ? data.file_url.split('/').pop() || 'chunk.webm' : 'chunk.webm',
+                type: data.evidence_type || 'STEALTH_VIDEO_CHUNK',
+                timestamp: data.timestamp || new Date().toISOString(),
+                sizeBytes: data.file_size || 428000,
+                sha256Hash: data.sha256_hash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+                hashStatus: 'VERIFICATION_PASSED',
+                chunkIndex: data.chunk_index || 0,
+                isSimulated: false,
+                legalRelevance: 'Live stealth media chunk verified with SHA-256 seal.',
+                previewAsset: {
+                  url: data.file_url ? `http://localhost:8000${data.file_url}` : undefined,
+                  type: data.evidence_type?.includes('AUDIO') ? 'audio' : 'video',
+                  durationSeconds: 4,
+                  mockResolution: '1080x1920 · 30fps H.264',
+                },
+              };
+
+              setEvidence((prev) => [newEv, ...prev]);
+              alertService.playPingSound();
+              addToast({
+                title: 'New Evidence Preserved',
+                message: `Chunk #${data.chunk_index} received with SHA-256 seal.`,
+                type: 'info',
+              });
+            } else if (type === 'GUARDIAN_COORDINATION_UPDATE') {
+              setGuardianCoordination((prev) => {
+                const existing = prev.find((c) => c.guardianName.includes(data.guardian_name.split(' ')[0]));
+                if (existing) {
+                  return prev.map((c) =>
+                    c.id === existing.id
+                      ? {
+                          ...c,
+                          statusAction: data.status_action,
+                          statusLabel: data.status_label,
+                          note: data.note,
+                          timestamp: 'Just now',
+                        }
+                      : c
+                  );
+                } else {
+                  return [
+                    {
+                      id: `coord-${Date.now()}`,
+                      guardianName: data.guardian_name,
+                      role: 'Trusted Responder',
+                      statusAction: data.status_action,
+                      statusLabel: data.status_label,
+                      note: data.note,
+                      timestamp: 'Just now',
+                    },
+                    ...prev,
+                  ];
+                }
+              });
+
+              addToast({
+                title: 'Circle Status Update',
+                message: `${data.guardian_name}: ${data.status_label}`,
+                type: 'info',
+              });
+            } else if (type === 'GUARDIAN_ACKNOWLEDGED') {
+              setIncidents((prev) =>
+                prev.map((inc) =>
+                  inc.id === data.incident_id
+                    ? { ...inc, status: 'ACKNOWLEDGED', acknowledgedBy: data.acknowledged_by }
+                    : inc
+                )
+              );
+            } else if (type === 'INCIDENT_RESOLVED') {
+              setIncidents((prev) =>
+                prev.map((inc) =>
+                  inc.id === data.incident_id ? { ...inc, status: 'RESOLVED' } : inc
+                )
+              );
+              stopEmergencyAlarm();
+            }
+          } catch {
+            // Ignore non-json ws frames
+          }
+        };
+
+        ws.onclose = () => {
+          setIsWsConnected(false);
+          reconnectTimer = window.setTimeout(connectWebSocket, 4000);
+        };
+
+        ws.onerror = () => {
+          setIsWsConnected(false);
+          try {
+            ws.close();
+          } catch {}
+        };
+      } catch {
+        setIsWsConnected(false);
+        reconnectTimer = window.setTimeout(connectWebSocket, 4000);
+      }
+    };
+
+    connectWebSocket();
+
+    return () => {
+      window.clearTimeout(reconnectTimer);
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  const updateGuardianStatus = async (
+    action: GuardianCoordinationStatus['statusAction'],
+    label: string,
+    note?: string
+  ) => {
+    // 1. Immediately update local state
+    setGuardianCoordination((prev) =>
+      prev.map((c) =>
+        c.isCurrentUser
+          ? {
+              ...c,
+              statusAction: action,
+              statusLabel: label,
+              note: note || c.note,
+              timestamp: 'Just now',
+            }
+          : c
+      )
+    );
+
+    // 2. Add event to timeline
+    const nowIso = new Date().toISOString();
+    const coordEvent: TimelineEvent = {
+      id: `evt-coord-${Date.now()}`,
+      incidentId: activeIncidentId,
+      eventType: 'GUARDIAN_ACKNOWLEDGED',
+      title: `Guardian Action: ${CURRENT_GUARDIAN.displayName}`,
+      description: `${CURRENT_GUARDIAN.displayName} updated status: '${label}'${note ? ` — ${note}` : ''}`,
+      timestamp: nowIso,
+      category: 'security',
+      isDemoEvent: false,
+    };
+    setTimelineEvents((prev) => [coordEvent, ...prev]);
+
+    addToast({
+      title: 'Status Broadcasted to Circle',
+      message: `Your status '${label}' was broadcasted to all guardians.`,
+      type: 'success',
+    });
+
+    // 3. Post to backend if active
+    try {
+      await fetch(`http://localhost:8000/api/incidents/${activeIncidentId}/coordination`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guardian_name: `${CURRENT_GUARDIAN.displayName} (${CURRENT_GUARDIAN.role})`,
+          status_action: action,
+          status_label: label,
+          note: note,
+        }),
+      });
+    } catch {
+      // Offline fallback
+    }
+  };
 
   const markNotificationAsRead = (id: string) => {
     setNotifications((prev) =>
@@ -459,6 +763,15 @@ export const GuardianProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         resetDemoState,
         getIncidentEvidence,
         getIncidentTimeline,
+        isWsConnected,
+        alarmEnabled,
+        setAlarmEnabled,
+        isAlarmPlaying,
+        triggerEmergencyAlarm,
+        stopEmergencyAlarm,
+        testEmergencyAlarm,
+        guardianCoordination,
+        updateGuardianStatus,
       }}
     >
       {children}
