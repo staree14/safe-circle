@@ -10,7 +10,7 @@
 
 **An intelligent, multi-tier personal safety net combining native wearable SOS triggers, stealth black-screen telemetry streaming, and court-admissible cryptographic evidence preservation.**
 
-[Problem Statement](#-problem-statement) • [The Solution](#-the-solution) • [Live Screens](#-screen-gallery--system-walkthrough) • [Tech Stack & Architecture](#-technical-architecture--tech-stack) • [Judging Rubric Alignment](#-recversion-2026-evaluation-matrix-alignment-100-marks) • [Quickstart](#-quickstart-guide)
+[Problem Statement](#-problem-statement) • [The Solution](#-the-solution) • [Live Screens](#-screen-gallery--system-walkthrough) • [Tech Stack & Architecture](#-technical-architecture--tech-stack) • [Key Innovations](#-key-innovations--novelty) • [System Workflow](#-end-to-end-system-workflow) • [Quickstart](#-quickstart-guide)
 
 </div>
 
@@ -50,28 +50,67 @@ SafeCircle addresses these challenges by bringing together discreet emergency ac
 
 SafeCircle bridges the gap between **instant physical survival** and **uncompromising judicial accountability** through a unified three-tier platform:
 
-```
-  ┌─────────────────────────┐         ┌─────────────────────────┐
-  │   Wear OS Smartwatch    │ ──BLE──▶│   Native Android App    │
-  │  (Kotlin / Compose)     │◀──Sync──│   (Kotlin / Compose)    │
-  │  1-Tap Tile & Gyro SOS  │         │  Stealth Background Svc │
-  └─────────────────────────┘         └─────────────────────────┘
-               │                                   │
-      Direct Cellular / LTE                 WebSocket / HTTPS
-               │                                   │
-               ▼                                   ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │                 SafeCircle FastAPI Backend                  │
-  │    Telemetry Ingestion • Celery Alert Fanout • S3 Vault     │
-  └─────────────────────────────────────────────────────────────┘
-                                   │
-                      Capability Link / WebSocket
-                                   │
-                                   ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │              SafeCircle Guardian Web Portal                 │
-  │      Live Radar Map • Audio Stream • Sec 65B Certificate    │
-  └─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph EdgeLayer ["📱 Wearable & Mobile Edge (100% Native Kotlin)"]
+        style EdgeLayer fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc
+        subgraph WearOS ["⌚ Wear OS Watch App (Kotlin / Compose)"]
+            W1["1-Tap SOS Tile"]
+            W2["Sensor / Fall Detection"]
+            W3["Direct LTE / Wi-Fi SOS"]
+        end
+        subgraph AndroidApp ["📱 Android Mobile App (Jetpack Compose)"]
+            A1["2-Sec Hold / Decoy PIN 112="]
+            A2["Foreground Tracking Service"]
+            A3["Stealth Camera & Audio Chunking"]
+            A4["Offline SMS Emergency Gateway"]
+        end
+        WearOS -- "Google Play Data Layer API (BLE)" --> AndroidApp
+    end
+
+    subgraph BackendLayer ["⚡ Cloud Telemetry & Media Vault (FastAPI & Redis)"]
+        style BackendLayer fill:#090d16,stroke:#818cf8,stroke-width:2px,color:#f8fafc
+        B1["WebSocket Streaming Gateway"]
+        B2["Redis Pub/Sub & Ephemeral Telemetry"]
+        B3["Celery Alert Fanout Engine"]
+        B4[("PostgreSQL + PostGIS")]
+        B5[("MinIO / S3 Encrypted Media Vault")]
+    end
+
+    subgraph DispatchLayer ["📢 Multi-Channel Alert & Dispatch Pipeline"]
+        style DispatchLayer fill:#1e1b4b,stroke:#f43f5e,stroke-width:2px,color:#f8fafc
+        D1["🚨 High-Priority FCM Push"]
+        D2["📲 Instant Telegram Bot Dispatch"]
+        D3["📞 Twilio SMS & Voice Broadcast"]
+        D4["🔗 Zero-Friction Capability URL"]
+    end
+
+    subgraph GuardianLayer ["🖥️ Guardian Command Center & Forensic Vault (Web)"]
+        style GuardianLayer fill:#131c31,stroke:#34d399,stroke-width:2px,color:#f8fafc
+        G1["🗺️ Live Radar Map & Safe Havens"]
+        G2["🎙️ Live Audio Waveform Stream"]
+        G3["📁 Cryptographic Evidence Vault (SHA-256)"]
+        G4["📜 Court-Admissible Sec 65B Certificate"]
+    end
+
+    AndroidApp -- "Live Audio/Video Chunks & GPS" --> B1
+    WearOS -- "Standalone SOS Fallback" --> B1
+    AndroidApp -. "No Cellular Internet" .-> D3
+
+    B1 --> B2
+    B1 --> B4
+    B1 --> B5
+    B2 --> B3
+
+    B3 --> D1
+    B3 --> D2
+    B3 --> D3
+    D4 -. "Open Link (No Auth Wall)" .-> GuardianLayer
+
+    B1 -- "Real-Time Telemetry Sync" --> G1
+    B5 -- "Secure Media Chunk Fetch" --> G2
+    B4 -- "Audit Trail & Hashes" --> G3
+    G3 --> G4
 ```
 
 1. **Native Wear OS Wrist Trigger (Kotlin + Gradle):** Quick 1-tap SOS complication/tile and biometric/fall sensor triggers. Streams SOS even if the phone remains inside a bag or is snatched away.
@@ -222,40 +261,68 @@ SafeCircle bridges the gap between **instant physical survival** and **uncomprom
 
 ---
 
-## 🏆 recHERsion 2026 Evaluation Matrix Alignment (100 Marks)
+## ✨ Key Innovations & Novelty
 
-SafeCircle has been architected from the ground up to achieve maximum marks across all official judging criteria:
+1. **Stealth Black-Screen Streaming:** Operates in complete background stealth, capturing ambient audio and 4-second video chunks even when the screen is powered down or camouflaged behind a working calculator decoy (`112=`).
+2. **Dual Watch-Phone Synergy (Native Kotlin):** Hardware-level Wear OS synchronization using Google Play Data Layer API. Allows an immediate SOS trigger from the wrist even if the phone has been snatched, bagged, or is out of physical reach.
+3. **Automated Section 65B & BSA Sec 63 Legal Forensics:** Bridges emergency response with judicial accountability. Automatically fingerprints evidence with SHA-256 digests and Merkle chain-of-custody seals, generating court-admissible forensic certificates ready for police FIR filing.
+4. **Zero-Friction Capability URL Dispatch:** Guardians receive a secure, time-limited capability link over SMS/Telegram that bypasses login barriers, granting authorized responders immediate situational awareness without delay.
 
-### 1. Problem Relevance & Understanding (15% — 15/15 Marks)
-* **Clarity of Problem:** Deep understanding that women's safety requires both **instant physical defense** and **post-incident legal accountability**.
-* **Target Users:** Women commuters, college students, late-shift workers, cab passengers, and targets of digital harassment.
-* **Direct Effectiveness:** Removes friction completely (Wear OS wrist panic, calculator secret PIN `112=`, fake calls) and addresses low-connectivity barriers with offline SMS fallback.
+---
 
-### 2. Innovation & Originality (15% — 15/15 Marks)
-* **Novelty 1: Stealth Black-Screen Streaming:** Streams live ambient audio and 4-second video chunks even while the phone's screen appears black or shows a functional calculator decoy.
-* **Novelty 2: Dual Watch-Phone Synergy:** Hardware-level Wear OS synchronization via Google Play Data Layer. Triggers SOS without needing the phone in hand.
-* **Novelty 3: Section 65B & BSA Sec 63 Legal Automation:** First-of-its-kind judicial evidence preservation engine that cryptographically fingerprints digital harassment screenshots and audio, producing court-admissible forensic certificates ready for police FIR filing.
-* **Novelty 4: Capability URL Dispatch:** Guardians receive a zero-friction, cryptographic capability link over SMS/Telegram that opens the live command center instantly without password barriers.
+## 🔄 End-to-End System Workflow
 
-### 3. Technical Implementation (20% — 20/20 Marks)
-* **Code Quality & Architecture:** Clean multi-module separation. 100% Native Kotlin on Android and Wear OS with Jetpack Compose (NO hybrid web-wrappers).
-* **Technical Depth:** Foreground services with explicit wake-lock management, CameraX background chunking, SHA-256 hash generation, and real-time WebSocket telemetry ingestion.
-* **Security & Integrity:** Tamper-evident Merkle tree digests, encrypted storage, and Section 65B electronic compliance.
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Victim as 👩 Victim (Watch/Phone)
+    participant Edge as 📱 Native App (Kotlin)
+    participant Cloud as ⚡ FastAPI Backend
+    participant Dispatch as 📢 Alert Pipeline
+    actor Guardian as 🛡️ Guardian (Web)
+    participant Vault as ⚖️ Legal Evidence Vault
 
-### 4. Working MVP & Demonstration (25% — 25/25 Marks)
-* **Core Functionality (10%):** All 6 mobile flows (Panic SOS, Journey Tracking, Safe Haven Discovery, Fake Call, Siren/Strobe, Evidence Vault) and all Guardian Web features (Live Radar Map, Audio Stream, Evidence Vault, Legal Certificate) are fully operational.
-* **End-to-End Workflow (5%):** Trigger SOS on Watch/Phone ➔ Telemetry ingested by Backend ➔ Guardian receives broadcast ➔ Guardian tracks live GPS & listens to audio ➔ Evidence sealed with Section 65B Certificate.
-* **Prototype Completeness & Integration (5%):** Comprehensive integration demonstrated on real hardware (Wear OS watch paired with mobile device) and browser command center.
-* **Demonstration & Validation (5%):** Validated using realistic urban commute scenarios (e.g., MG Road to Malleswaram, Bangalore cab transit threat).
+    Victim->>Edge: Triggers SOS (Wear OS Tile / 2-sec hold / PIN 112=)
+    activate Edge
+    Edge->>Edge: Start Foreground Service + CameraX + AudioRecord
+    Edge->>Cloud: Stream GPS Telemetry + 4s Media Chunks via WebSocket
+    deactivate Edge
+    
+    activate Cloud
+    Cloud->>Cloud: Ingest Telemetry & Compute SHA-256 Hashes
+    Cloud->>Dispatch: Fan-out Alert (Telegram, FCM Push, Twilio SMS)
+    Dispatch->>Guardian: Deliver Capability Link with Incident ID
+    deactivate Cloud
 
-### 5. Feasibility & Potential Impact (15% — 15/15 Marks)
-* **Real-World Impact:** Significantly reduces response time for police and guardians; elevates conviction rates in cyber harassment through unassailable digital evidence.
-* **Scalability:** Stateless FastAPI backend with Redis pub/sub handles tens of thousands of concurrent emergency telemetry streams with minimal latency.
-* **Practical Applicability:** Works across high-end smartwatches and low-end Android smartphones with offline SMS graceful degradation.
+    Guardian->>Cloud: Open Capability URL on Web Command Center
+    Cloud-->>Guardian: Stream Live GPS Radar & Ambient Audio Waveform
+    Guardian->>Guardian: Acknowledge Alert & Quick-Dial 112/1091
 
-### 6. User Experience & Accessibility (10% — 10/10 Marks)
-* **Intuitive Stress-Tolerant UX:** 2-second hold SOS button with haptic feedback prevents accidental touches while enabling rapid activation under panic.
-* **Accessibility:** High-contrast Command Center dark mode (`#0B1020`), bold typographic hierarchy (Inter & JetBrains Mono), large touch targets, and clear audio cues.
+    Cloud->>Vault: Seal Master Merkle Root Custody Digest
+    Vault-->>Guardian: Export Print-Ready Section 65B Forensic Certificate
+```
+
+1. **Duress Trigger:** User triggers SOS via Wear OS Watch Tile, mobile 2-second hold, or stealth calculator PIN (`112=`).
+2. **Edge Ingestion & Stealth Capture:** Foreground Service spins up with camera/mic locks, capturing encrypted 4-second chunks and continuous GPS coordinates.
+3. **Multi-Channel Alert Fanout:** FastAPI and Celery distribute urgent alerts with high-priority FCM notifications, Telegram bot messages, and SMS fallbacks.
+4. **Guardian Situational Awareness:** Guardian opens the link to view the victim's real-time position with 4.5m accuracy, verified safe havens, and live ambient audio.
+5. **Immutable Forensic Sealing:** All exhibits are stamped with verifiable SHA-256 hashes, producing a court-admissible certificate under Section 65B of the Indian Evidence Act and Section 63 of the Bharatiya Sakshya Adhiniyam (BSA).
+
+---
+
+## 🌍 Practical Feasibility, Impact & Scalability
+
+- **Real-World Impact:** Closes the gap between panic alerting and emergency action, while drastically improving conviction rates by securing untampered digital evidence at the moment of duress.
+- **High-Throughput Scalability:** Stateless FastAPI microservices backed by Redis Pub/Sub ensure low-latency concurrent telemetry streaming across thousands of simultaneous incidents.
+- **Offline Resilience:** If cellular data drops, the mobile client falls back to 1-tap localized SMS dispatch containing precise GPS coordinates and emergency contacts.
+
+---
+
+## 🎨 UX & Accessibility Design Principles
+
+- **Stress-Tolerant Haptics:** A 2-second hold-and-release mechanism with vibration cues eliminates accidental triggers while remaining effortless under duress.
+- **Command Center Visual Hierarchy:** Built on an intentional dark palette (`#0B1020`) with high-contrast status colors (Emergency Red `#F0525F`, Amber `#E8B65C`, Resolved Teal `#38C6A3`).
+- **Dead-Man Check-in Intervals:** Automated safety check-ins (e.g., every 15 minutes) trigger proactive alerts to guardians if the user deviates from route or fails to confirm safety.
 
 ---
 
