@@ -115,32 +115,38 @@ flowchart TD
 
 1. **Native Wear OS Wrist Trigger (Kotlin + Gradle):** Quick 1-tap SOS complication/tile and biometric/fall sensor triggers. Streams SOS even if the phone remains inside a bag or is snatched away.
 2. **Native Android App (Kotlin + Jetpack Compose):** Operates under high-priority Foreground Services. Features stealth camouflaged calculator launch (`112=`), black-screen streaming, realistic fake escape call, audio sirens, offline SMS fallbacks, and safe havens route planning.
-3. **Decentralized Guardian Web Portal (React / Next.js):** Zero-friction, capability-URL-authenticated command center for emergency contacts. Displays live GPS telemetry, safe havens radar, audio chunk waveforms, and instant 112/1091 authority dispatch.
-4. **Cryptographic Evidence Vault & Judicial Certificate:** Instant client-side SHA-256 hashing and Merkle-tree chain-of-custody sealing. Generates print-ready **Section 65B Electronic Evidence Certificates** with legal citations matching the Indian Penal Code, IT Act 2000, and Bharatiya Nyaya Sanhita (BNS).
+3. **SafeCircle Telegram Guardian Bot (Instant Alert Dispatch):** Automated multi-guardian alerting over Telegram. Immediately broadcasts "Physical hold SOS triggered from wearable" along with live Google Maps coordinate links (`https://maps.google.com/?q=lat,lng`) directly to contacts without requiring them to install an app.
+4. **Decentralized Guardian Web Portal (React / Next.js):** Zero-friction, capability-URL-authenticated command center for emergency contacts. Displays live GPS telemetry, safe havens radar, audio chunk waveforms, and instant 112/1091 authority dispatch.
+5. **Cryptographic Evidence Vault & Judicial Certificate:** Instant client-side SHA-256 hashing and Merkle-tree chain-of-custody sealing. Generates print-ready **Section 65B Electronic Evidence Certificates** with legal citations matching the Indian Penal Code, IT Act 2000, and Bharatiya Nyaya Sanhita (BNS).
 
 ---
 
 ## 📱 Screen Gallery & System Walkthrough
 
-### 1. Hardware & Companion Integration (Watch + Phone)
-*Real-time paired physical trigger tested on hardware.*
+### 1. Hardware & Companion Integration (Watch + Phone + Telegram Alert Bot)
+*Real-time paired physical trigger and automated emergency broadcast tested on live hardware.*
 
 <div align="center">
   <table>
     <tr>
-      <td align="center"><b>Wear OS Watch & Android Mobile Hardware Sync</b></td>
+      <td align="center"><b>Wear OS Watch & Android Mobile Sync</b></td>
+      <td align="center"><b>SafeCircle Telegram Guardian Bot</b></td>
       <td align="center"><b>Emergency Escape: Realistic Fake Call</b></td>
     </tr>
     <tr>
       <td align="center">
-        <img src="screenshots/WhatsApp%20Image%202026-10-25%20at%2017.24.10.jpeg" width="300" alt="Watch and Phone hardware synchronization"/>
+        <img src="screenshots/WhatsApp%20Image%202026-10-25%20at%2017.24.10.jpeg" width="280" alt="Watch and Phone hardware synchronization"/>
       </td>
       <td align="center">
-        <img src="screenshots/Screenshot%202026-10-24%20165652.png" width="300" alt="Fake Call Escape Screen"/>
+        <img src="screenshots/WhatsApp%20Image%202026-10-25%20at%2019.31.22.jpeg" width="280" alt="SafeCircle Guardian Alert Telegram Bot"/>
+      </td>
+      <td align="center">
+        <img src="screenshots/Screenshot%202026-10-24%20165652.png" width="280" alt="Fake Call Escape Screen"/>
       </td>
     </tr>
     <tr>
       <td><b>Wear OS Companion SOS:</b> Physical trigger initiates instant call fanout across trusted circle ("Dad or 2 others") via Wi-Fi/LTE fallback without touching the phone.</td>
+      <td><b>Automated Telegram Bot Alerts:</b> Urgent alert broadcast delivered immediately to family/guardians upon wearable SOS with live Google Maps links and continuous location updates.</td>
       <td><b>Discrete De-escalation:</b> Authentic caller screen with customizable incoming timer to gracefully excuse oneself from hazardous encounters.</td>
     </tr>
   </table>
@@ -267,6 +273,7 @@ flowchart TD
 2. **Dual Watch-Phone Synergy (Native Kotlin):** Hardware-level Wear OS synchronization using Google Play Data Layer API. Allows an immediate SOS trigger from the wrist even if the phone has been snatched, bagged, or is out of physical reach.
 3. **Automated Section 65B & BSA Sec 63 Legal Forensics:** Bridges emergency response with judicial accountability. Automatically fingerprints evidence with SHA-256 digests and Merkle chain-of-custody seals, generating court-admissible forensic certificates ready for police FIR filing.
 4. **Zero-Friction Capability URL Dispatch:** Guardians receive a secure, time-limited capability link over SMS/Telegram that bypasses login barriers, granting authorized responders immediate situational awareness without delay.
+5. **Instant SafeCircle Telegram Guardian Bot:** Zero-setup emergency alerting. When an SOS is triggered from the watch or mobile app, the backend bot instantly broadcasts urgent alert notifications containing clickable live Google Maps telemetry pins (`https://maps.google.com/?q=lat,lng`) to family and trusted contacts directly in Telegram without requiring them to install new apps.
 
 ---
 
