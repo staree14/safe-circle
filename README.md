@@ -333,35 +333,110 @@ sequenceDiagram
 
 ---
 
-## 🚀 Quickstart Guide
+## 🚀 Quickstart & Startup Guide
 
-### 1. Guardian Web Command Center
+Follow these step-by-step instructions to run each component locally.
+
+---
+
+### 1. Prerequisites
+- **Python:** 3.10 to 3.12+ (Backend)
+- **Node.js:** v18.0.0 or higher & npm (Web portals)
+- **Android Studio:** Ladybug (2024.2) or newer with JDK 17 (Native Kotlin App)
+
+---
+
+### 2. Backend Server (FastAPI + WebSockets)
+The backend orchestrates real-time telemetry streaming, audio chunk ingestion, and Telegram/FCM alert fan-out.
+
 ```bash
+# Navigate to backend directory
+cd safecircle-backend
+
+# 1. Create and activate a Python virtual environment
+# On Windows (PowerShell):
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+
+# On macOS/Linux:
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Setup environment variables
+# On Windows (PowerShell):
+Copy-Item .env.example .env
+# On macOS/Linux:
+cp .env.example .env
+
+# 4. Start the FastAPI development server
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+- **Interactive API Docs (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
+- **API Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
+- **Demo User Telemetry Endpoint:** [http://localhost:8000/api/users/demo](http://localhost:8000/api/users/demo)
+
+> **Optional Telegram Bot Setup:** In `safecircle-backend/.env`, set your `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` to receive automated live GPS emergency alerts directly on Telegram upon SOS triggers.
+
+---
+
+### 3. Guardian Web Command Center
+The desktop situational awareness dashboard for trusted contacts, responders, and court evidence certification.
+
+```bash
+# In a new terminal tab:
 cd safecircle-guardian
+
+# Install frontend dependencies
+npm install
+
+# Start Vite dev server
+npm run dev
+```
+
+- **Command Center URL:** [http://localhost:5173](http://localhost:5173)
+- **Features to explore:** Live radar map, audio waveform stream, Section 65B printable forensic certificate (`/reports`), and live mock chunk simulator.
+
+---
+
+### 4. Native Android App (Kotlin + Jetpack Compose)
+The 100% native Android application featuring the 2-second hold SOS, calculator camouflage decoy, fake call simulator, and offline SMS fallback.
+
+#### Using Android Studio (Recommended):
+1. Open **Android Studio**.
+2. Select **File > Open** (or **Open** from welcome screen).
+3. Select the `android/` directory inside this repository (`c:\Users\hp\safe-circle\android`).
+4. Wait for Gradle Sync to complete.
+5. Select an Android Emulator or connected physical device (Android 8.0+ / API 26+) and click **Run** (`Shift + F10`).
+
+#### Using Command Line (Gradle):
+```bash
+cd android
+
+# On Windows:
+.\gradlew assembleDebug
+
+# On macOS / Linux:
+chmod +x gradlew
+./gradlew assembleDebug
+```
+*The compiled debug APK will be located at `android/app/build/outputs/apk/debug/app-debug.apk`.*
+
+---
+
+### 5. Interactive Mobile Web Simulator (Optional)
+If you wish to test the mobile UI directly inside your browser:
+
+```bash
+# In a separate terminal:
+cd app
 npm install
 npm run dev
 ```
-Open [http://localhost:5173](http://localhost:5173) in your browser to view the active incident command center, live radar map, and legal report generator.
-
-### 2. Backend Server (FastAPI)
-```bash
-cd safecircle-backend
-# Activate virtual environment
-source .venv/bin/activate  # Or .venv\Scripts\activate on Windows
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-- **Swagger UI:** [http://localhost:8000/docs](http://localhost:8000/docs)
-- **Health Check:** [http://localhost:8000/health](http://localhost:8000/health)
-
-### 3. Native Android & Wear OS Apps (Kotlin)
-Open the root mobile project in **Android Studio Ladybug (or newer)**:
-```bash
-# Build Android APK via Gradle
-./gradlew :app:assembleDebug
-
-# Build Wear OS APK via Gradle
-./gradlew :wear:assembleDebug
-```
+- **Mobile Simulator URL:** [http://localhost:5174](http://localhost:5174) (or port displayed in terminal)
 
 ---
 
