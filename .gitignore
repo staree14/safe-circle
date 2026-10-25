@@ -1,27 +1,15 @@
-# Python & virtual environment
-.venv/
-*/.venv/
-__pycache__/
-*/__pycache__/
-*.pyc
-*.pyo
-
-# Databases & local storage
-*.db
-*.sqlite3
-safecircle-backend/uploads/*
-!safecircle-backend/uploads/.gitkeep
-
-# Environment files
-.env
-*/.env
-
-# Node & frontend
-node_modules/
-*/node_modules/
-dist/
-*/dist/
-
-# System
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
 .DS_Store
-*/.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
