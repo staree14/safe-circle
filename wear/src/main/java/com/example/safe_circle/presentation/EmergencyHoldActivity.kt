@@ -14,6 +14,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.telephony.SmsManager
+import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -27,6 +28,10 @@ import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
+import kotlin.concurrent.thread
 
 class EmergencyHoldActivity : ComponentActivity() {
 
@@ -158,8 +163,44 @@ class EmergencyHoldActivity : ComponentActivity() {
 
     private fun executeEmergencyProtocol() {
         pulseSuccessVibration()
+        // 1. Send Telegram Alert IMMEDIATELY and UNCONDITIONALLY without waiting for GPS/SMS
+        sendTelegramAlertToGuardian(12.9716, 77.5946)
+        // 2. Fetch live location & send SMS (and update Telegram with precise live GPS if obtained)
         fetchLocationAndSendSMS()
+        // 3. Place emergency phone call
         makeEmergencyCall()
+    }
+
+    private fun sendTelegramAlertToGuardian(lat: Double = 12.9716, lng: Double = 77.5946) {
+        thread {
+            try {
+                val botToken = "8775381773:AAEtqPpcITYoVklIOOKMc918vp4Cq-qZosI"
+                val guardianChatId = "8986592565"
+
+                val message = """
+                    🚨 *SAFECIRCLE EMERGENCY ALERT!*
+                    Physical hold SOS triggered from wearable.
+                    
+                    📍 *Live Location:*
+                    https://maps.google.com/?q=$lat,$lng
+                """.trimIndent()
+
+                val encodedMsg = URLEncoder.encode(message, "UTF-8")
+                val urlString = "https://api.telegram.org/bot$botToken/sendMessage?chat_id=$guardianChatId&text=$encodedMsg&parse_mode=Markdown"
+
+                val url = URL(urlString)
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = "GET"
+                conn.connectTimeout = 5000
+                conn.readTimeout = 5000
+
+                val code = conn.responseCode
+                Log.d("SafeCircleSOS", "Telegram Response: $code")
+                conn.disconnect()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     private fun fetchLocationAndSendSMS() {
@@ -178,12 +219,14 @@ class EmergencyHoldActivity : ComponentActivity() {
                     if (location != null) {
                         val message = "EMERGENCY! I need help. My live location: https://maps.google.com/?q=${location.latitude},${location.longitude}"
                         sendSMS(message)
+                        sendTelegramAlertToGuardian(location.latitude, location.longitude)
                     } else {
                         // Fallback to last known location if getCurrentLocation returns null
                         fusedLocationClient.lastLocation.addOnSuccessListener { lastLoc: Location? ->
                             if (lastLoc != null) {
                                 val message = "EMERGENCY! I need help. My last known location: https://maps.google.com/?q=${lastLoc.latitude},${lastLoc.longitude}"
                                 sendSMS(message)
+                                sendTelegramAlertToGuardian(lastLoc.latitude, lastLoc.longitude)
                             } else {
                                 sendSMS("EMERGENCY! I need immediate help. (Unable to get GPS fix)")
                             }
